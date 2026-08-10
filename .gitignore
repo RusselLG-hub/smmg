@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Agent instructions
+AGENTS.md
+.agents/
+.codex/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Nuxt
+.nuxt/
+.output/
+.data/
+.nitro/
+.cache/
+
+# Docker
+*.log
+
+# Python
+venv/
+.venv/
+*.pyo
+*.pyd
+
+# Alembic
+alembic/versions/*.pyc
+
+# MinIO data (local dev)
+minio_data/

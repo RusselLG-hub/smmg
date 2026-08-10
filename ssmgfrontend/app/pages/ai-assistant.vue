@@ -1,0 +1,257 @@
+<script setup lang="ts">
+import { ref, onMounted, nextTick, watch } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { useAiIntegrationStore } from '~/stores/aiIntegration'
+
+definePageMeta({
+  middleware: 'auth',
+})
+
+const authStore = useAuthStore()
+const aiStore = useAiIntegrationStore()
+
+const inputMessage = ref('')
+const chatContainer = ref<HTMLElement | null>(null)
+const sidebarOpen = ref(false)
+
+onMounted(async () => {
+  await aiStore.fetchSessions()
+  if (aiStore.sessions.length === 0) {
+    await aiStore.createNewSession()
+  }
+  scrollToBottom()
+})
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+    }
+  })
+}
+
+watch(
+  () => aiStore.activeSession?.messages.length,
+  () => {
+    scrollToBottom()
+  }
+)
+
+const handleSendMessage = async () => {
+  const text = inputMessage.value.trim()
+  if (!text || aiStore.sending) return
+  inputMessage.value = ''
+  await aiStore.sendMessage(text)
+  scrollToBottom()
+}
+
+const handleCreateNewChat = async () => {
+  await aiStore.createNewSession()
+  sidebarOpen.value = false
+}
+
+const handleDeleteChat = async (id: string) => {
+  if (!confirm('Are you sure you want to delete this chat session?')) return
+  await aiStore.deleteSession(id)
+}
+
+const formatDate = (isoStr: string) => {
+  const d = new Date(isoStr)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+</script>
+
+<template>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-5rem)] flex flex-col">
+    <!-- Disclaimer Banners -->
+    <div class="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-2.5 rounded-xl text-xs flex items-center justify-between mb-4 shrink-0">
+      <div class="flex items-center gap-2">
+        <LucideAlertTriangle class="h-4 w-4 text-amber-600 shrink-0" />
+        <span>
+          <strong>Notice:</strong> Provides general health education and basic first-aid guidance. Does not replace professional medical diagnosis or care.
+        </span>
+      </div>
+
+      <div class="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-100 px-2.5 py-1 rounded-md">
+        <LucidePhoneCall class="h-3.5 w-3.5" />
+        <span>Emergencies: Call Local Emergency Services</span>
+      </div>
+    </div>
+
+    <!-- Main Chat Workspace Layout -->
+    <div class="flex-1 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex relative">
+      <!-- Mobile Sidebar Toggle Overlay -->
+      <div
+        v-if="sidebarOpen"
+        class="fixed inset-0 bg-black/30 z-20 md:hidden"
+        @click="sidebarOpen = false"
+      ></div>
+
+      <!-- Chat Sessions Sidebar -->
+      <aside
+        class="w-72 bg-gray-50 border-r border-gray-200 flex flex-col z-30 transition-transform duration-200 absolute md:static inset-y-0 left-0"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+      >
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+          <button
+            class="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+            @click="handleCreateNewChat"
+          >
+            <LucidePlus class="h-4 w-4" />
+            <span>New Consultation Chat</span>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-1">
+          <div v-if="aiStore.sessions.length === 0" class="py-8 text-center text-xs text-gray-500">
+            No previous chat sessions.
+          </div>
+
+          <div
+            v-for="s in aiStore.sessions"
+            :key="s.id"
+            class="group flex items-center justify-between p-3 rounded-xl cursor-pointer text-xs transition-colors"
+            :class="s.id === aiStore.activeSessionId ? 'bg-primary-100 text-primary-900 font-bold' : 'text-gray-700 hover:bg-gray-100'"
+            @click="aiStore.selectSession(s.id); sidebarOpen = false"
+          >
+            <div class="flex items-center gap-2 truncate">
+              <LucideMessageSquare class="h-4 w-4 shrink-0 text-primary-600" />
+              <span class="truncate">{{ s.title || 'Consultation Chat' }}</span>
+            </div>
+
+            <button
+              class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 p-1 rounded transition-opacity"
+              title="Delete session"
+              @click.stop="handleDeleteChat(s.id)"
+            >
+              <LucideTrash2 class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Active Conversation Area -->
+      <main class="flex-1 flex flex-col h-full bg-white relative">
+        <!-- Chat Header Bar -->
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white shrink-0">
+          <div class="flex items-center gap-3">
+            <button
+              class="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              @click="sidebarOpen = !sidebarOpen"
+            >
+              <LucideMenu class="h-5 w-5" />
+            </button>
+
+            <div class="h-9 w-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center">
+              <LucideBot class="h-5 w-5" />
+            </div>
+
+            <div>
+              <h2 class="text-sm font-bold text-gray-900">
+                {{ aiStore.activeSession?.title || 'AI Health & First-Aid Assistant' }}
+              </h2>
+              <p class="text-xs text-gray-500">General Health & Emergency First-Aid Assistant</p>
+            </div>
+          </div>
+
+          <button
+            v-if="aiStore.activeSessionId"
+            class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1"
+            @click="handleDeleteChat(aiStore.activeSessionId)"
+          >
+            <LucideTrash2 class="h-3.5 w-3.5" />
+            <span>Delete Chat</span>
+          </button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div ref="chatContainer" class="flex-1 overflow-y-auto p-6 space-y-6">
+          <div v-if="aiStore.loading" class="flex justify-center py-12">
+            <LucideLoader2 class="h-8 w-8 text-primary-600 animate-spin" />
+          </div>
+
+          <template v-else-if="aiStore.activeSession?.messages">
+            <!-- Initial Welcome Message if empty session -->
+            <div v-if="aiStore.activeSession.messages.length === 0" class="py-12 text-center space-y-3 max-w-md mx-auto">
+              <div class="h-12 w-12 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center mx-auto">
+                <LucideStethoscope class="h-6 w-6" />
+              </div>
+              <h3 class="text-base font-bold text-gray-900">How can I assist your health today?</h3>
+              <p class="text-xs text-gray-500">
+                Ask about basic first-aid procedures, general symptom information, or wellness advice.
+              </p>
+            </div>
+
+            <!-- Message List -->
+            <div
+              v-for="msg in aiStore.activeSession.messages"
+              :key="msg.id"
+              class="flex gap-4"
+              :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+            >
+              <!-- AI Avatar -->
+              <div v-if="msg.role === 'assistant'" class="h-8 w-8 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0 mt-1">
+                <LucideBot class="h-4 w-4" />
+              </div>
+
+              <div
+                class="max-w-2xl rounded-2xl p-4 text-xs leading-relaxed space-y-1 shadow-sm"
+                :class="
+                  msg.role === 'user'
+                    ? 'bg-primary-600 text-white rounded-br-none font-medium'
+                    : 'bg-gray-100 text-gray-900 rounded-bl-none border border-gray-200'
+                "
+              >
+                <div class="whitespace-pre-wrap">{{ msg.content }}</div>
+                <div
+                  class="text-[10px] text-right font-mono mt-1"
+                  :class="msg.role === 'user' ? 'text-primary-200' : 'text-gray-600'"
+                >
+                  {{ formatDate(msg.created_at) }}
+                </div>
+              </div>
+
+              <!-- User Avatar -->
+              <div v-if="msg.role === 'user'" class="h-8 w-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shrink-0 mt-1">
+                {{ authStore.user?.name.charAt(0) }}
+              </div>
+            </div>
+
+            <!-- Generating Loading Indicator -->
+            <div v-if="aiStore.sending" class="flex items-center gap-3">
+              <div class="h-8 w-8 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0">
+                <LucideBot class="h-4 w-4" />
+              </div>
+              <div class="bg-gray-100 border border-gray-200 px-4 py-3 rounded-2xl rounded-bl-none text-xs text-gray-500 flex items-center gap-2">
+                <LucideLoader2 class="h-4 w-4 text-teal-600 animate-spin" />
+                <span>Assistant is evaluating your prompt...</span>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Input Box Bar -->
+        <div class="p-4 border-t border-gray-200 bg-white shrink-0">
+          <form class="flex items-center gap-3" @submit.prevent="handleSendMessage">
+            <input
+              v-model="inputMessage"
+              type="text"
+              placeholder="Ask about general health information or basic first-aid..."
+              :disabled="aiStore.sending"
+              class="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none disabled:bg-gray-50 text-gray-900"
+            />
+
+            <button
+              type="submit"
+              :disabled="!inputMessage.trim() || aiStore.sending"
+              class="px-5 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5"
+            >
+              <LucideSend class="h-4 w-4" />
+              <span>Send</span>
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</template>
