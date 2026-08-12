@@ -108,7 +108,7 @@ const formatTime = (isoStr: string) => {
       </div>
 
       <!-- Next Upcoming Appointment Card -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+      <div class="card p-6 space-y-4">
         <div class="flex items-center justify-between pb-4 border-b border-gray-100">
           <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
             <LucideClock class="h-5 w-5 text-primary-600" />

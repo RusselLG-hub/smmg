@@ -3,11 +3,18 @@ import { useAuthStore } from '~/stores/auth'
 export default defineNuxtRouteMiddleware(async () => {
   const authStore = useAuthStore()
 
-  if (!authStore.user) {
+  if (!authStore.initialized) {
     await authStore.fetchUser()
   }
 
   if (!authStore.isAuthenticated) {
     return navigateTo('/login')
+  }
+
+  if (!authStore.isEmailVerified) {
+    if (authStore.user?.email) {
+      authStore.setPendingVerificationEmail(authStore.user.email)
+    }
+    return navigateTo('/verify-email')
   }
 })

@@ -8,6 +8,7 @@ class UserRead(BaseModel):
     id: str
     email: EmailStr
     name: str
+    profile_image_url: str | None = None
     role: str
     is_active: bool
     is_email_verified: bool

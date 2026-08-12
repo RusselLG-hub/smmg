@@ -13,7 +13,7 @@ from app.features.v1.users import schema as user_schema
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=auth_schema.AuthResponse, status_code=201)
+@router.post("/register", response_model=auth_schema.AuthResponse, status_code=202)
 @limiter.limit("5/minute")
 async def register(
     request: Request,
@@ -24,7 +24,7 @@ async def register(
     user_read = user_schema.UserRead.model_validate(user)
     return auth_schema.AuthResponse(
         user=user_read,
-        message="Registration successful. Please check your email for verification code.",
+        message="Registration pending. Please check your email for the verification code.",
     )
 
 
@@ -93,3 +93,38 @@ async def get_me(
     current_user: user_model.User = Depends(get_current_user),
 ):
     return user_schema.UserRead.model_validate(current_user)
+
+
+@router.patch("/me", response_model=user_schema.UserRead)
+async def update_me(
+    data: auth_schema.ProfileUpdateRequest,
+    current_user: user_model.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await auth_service.update_profile(db, current_user, data)
+    return user_schema.UserRead.model_validate(user)
+
+
+@router.post("/password-change/request", response_model=auth_schema.MessageResponse)
+@limiter.limit("3/minute")
+async def request_password_change(
+    request: Request,
+    current_user: user_model.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await auth_service.request_password_change(db, current_user)
+    return auth_schema.MessageResponse(
+        message="A 6-digit verification code was sent to your email."
+    )
+
+
+@router.post("/password-change/confirm", response_model=auth_schema.MessageResponse)
+@limiter.limit("5/minute")
+async def confirm_password_change(
+    request: Request,
+    data: auth_schema.PasswordChangeConfirmRequest,
+    current_user: user_model.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await auth_service.confirm_password_change(db, current_user, data)
+    return auth_schema.MessageResponse(message="Password changed successfully.")

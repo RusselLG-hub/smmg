@@ -18,6 +18,15 @@ export interface AIChatSessionDetail extends AIChatSession {
   messages: AIChatMessage[]
 }
 
+export interface AIChatAdminSession extends AIChatSession {
+  user: import('./User').User
+  message_count: number
+}
+
+export interface AIChatAdminSessionDetail extends AIChatSessionDetail {
+  user: import('./User').User
+}
+
 export interface CreateMessageRequest {
   content: string
 }

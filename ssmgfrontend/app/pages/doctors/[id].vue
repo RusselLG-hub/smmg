@@ -124,7 +124,7 @@ const handleConfirmBooking = async () => {
       </div>
 
       <!-- Top Profile Banner -->
-      <div class="card overflow-hidden">
+      <div class="card !p-0 overflow-hidden">
         <div class="p-8 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div class="h-24 w-24 rounded-full overflow-hidden bg-primary-50 border-2 border-primary-200 flex items-center justify-center shrink-0">
             <img
@@ -273,7 +273,7 @@ const handleConfirmBooking = async () => {
     </div>
 
     <!-- BOOKING CONFIRMATION MODAL -->
-    <div v-if="showBookingModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm appointment booking">
+    <div v-if="showBookingModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm appointment booking" @click.self="showBookingModal = false">
       <div class="modal-panel max-w-md space-y-4">
         <h3 class="text-lg font-bold text-gray-900">Confirm Appointment Booking</h3>
 

@@ -13,6 +13,7 @@ definePageMeta({
 const authStore = useAuthStore()
 const patientService = usePatientService()
 const uploadService = useUploadService()
+const profileImageUrl = useState<string | null>('patient-profile-image-url', () => null)
 
 const profile = ref<PatientProfile | null>(null)
 const loading = ref(true)
@@ -41,6 +42,7 @@ onMounted(async () => {
     form.phone = res.phone || ''
     form.address = res.address || ''
     form.profile_image_url = res.profile_image_url || ''
+    profileImageUrl.value = res.profile_image_url || null
   } catch (err: any) {
     errorMsg.value = err?.data?.detail || 'Failed to load profile'
   } finally {
@@ -85,6 +87,7 @@ const handleSave = async () => {
       profile_image_url: form.profile_image_url || null,
     })
     profile.value = updated
+    profileImageUrl.value = updated.profile_image_url || null
     if (authStore.user) {
       authStore.user.name = form.name
     }
@@ -229,5 +232,6 @@ const handleSave = async () => {
         </form>
       </template>
     </div>
+    <FeaturesProfileChangePasswordCard v-if="profile" class="mt-6" :email="profile.user.email" />
   </div>
 </template>

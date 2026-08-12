@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.v1.doctors.model import DoctorProfile
@@ -55,6 +56,22 @@ async def create(
     await db.commit()
     await db.refresh(doctor)
     return doctor
+
+
+async def get_or_create(db: AsyncSession, user_id: str) -> DoctorProfile:
+    doctor = await get_by_user_id(db, user_id)
+    if doctor:
+        return doctor
+    try:
+        return await create(db, user_id=user_id)
+    except IntegrityError:
+        # The layout and profile page can request /me at the same time. The
+        # unique user_id constraint lets one create win; load that row here.
+        await db.rollback()
+        doctor = await get_by_user_id(db, user_id)
+        if doctor:
+            return doctor
+        raise
 
 
 async def update(

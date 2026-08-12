@@ -19,8 +19,12 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/ssmg
     command: >-
       sh -c "python -m app.scripts.seed_admin &&
+      python -m app.scripts.seed_catalog &&
+      python -m app.scripts.seed_workforce &&
       exec uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
       postgres:
@@ -57,6 +61,20 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@ssmg.example.com
+      PGADMIN_DEFAULT_PASSWORD: pgadmin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   minio_data:
+  pgadmin_data:

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import { usePatientService } from '~/services/patient'
+import { useDoctorsService } from '~/services/doctors'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Award,
@@ -18,14 +20,31 @@ import {
 } from '@lucide/vue'
 
 const authStore = useAuthStore()
+const patientService = usePatientService()
+const doctorsService = useDoctorsService()
 const router = useRouter()
 const route = useRoute()
+const profileImageUrl = useState<string | null>('patient-profile-image-url', () => null)
 
 const sidebarOpen = ref(false)
 
 onMounted(async () => {
-  if (!authStore.user) {
-    await authStore.fetchUser()
+  if (authStore.user?.role === 'patient') {
+    try {
+      const profile = await patientService.getMyProfile()
+      profileImageUrl.value = profile.profile_image_url || null
+    } catch {
+      profileImageUrl.value = null
+    }
+  } else if (authStore.user?.role === 'doctor') {
+    try {
+      const profile = await doctorsService.getMyProfile()
+      profileImageUrl.value = profile.profile_image_url || null
+    } catch {
+      profileImageUrl.value = null
+    }
+  } else {
+    profileImageUrl.value = authStore.user?.profile_image_url || null
   }
 })
 
@@ -37,17 +56,16 @@ watch(
   }
 )
 
-const dashboardRoute = computed(() => {
+const profileRoute = computed(() => {
   const role = authStore.user?.role
-  if (role === 'patient') return '/patient/dashboard'
-  if (role === 'doctor') return '/doctor/dashboard'
-  if (role === 'staff') return '/staff/dashboard'
-  if (role === 'admin') return '/admin/dashboard'
-  return '/'
+  if (role === 'patient') return '/patient/profile'
+  if (role === 'doctor') return '/doctor/profile'
+  return '/account/profile'
 })
 
 const handleLogout = async () => {
   await authStore.logout()
+  profileImageUrl.value = null
   await router.push('/login')
 }
 
@@ -65,6 +83,7 @@ const doctorLinks = [
   { name: 'Consultations', to: '/doctor/appointments', icon: ClipboardList },
   { name: 'My Schedule', to: '/admin/schedules', icon: Clock },
   { name: 'My Analytics', to: '/doctor/reports', icon: BarChart3 },
+  { name: 'My Profile', to: '/doctor/profile', icon: User },
   { name: 'AI Assistant', to: '/ai-assistant', icon: Bot },
 ]
 
@@ -72,6 +91,7 @@ const staffLinks = [
   { name: 'Dashboard', to: '/staff/dashboard', icon: LayoutDashboard },
   { name: 'Appointments', to: '/admin/appointments', icon: Calendar },
   { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
+  { name: 'My Profile', to: '/account/profile', icon: User },
 ]
 
 const adminLinks = [
@@ -80,6 +100,8 @@ const adminLinks = [
   { name: 'Management', to: '/admin', icon: Settings },
   { name: 'Schedules', to: '/admin/schedules', icon: Clock },
   { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
+  { name: 'AI Monitoring', to: '/admin/ai-monitoring', icon: Bot },
+  { name: 'My Profile', to: '/account/profile', icon: User },
 ]
 
 const publicLinks = [
@@ -104,7 +126,7 @@ const isActive = (path: string) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 antialiased">
+  <div class="app-shell min-h-screen flex flex-col font-sans text-gray-900 antialiased">
     
     <!-- AUTHENTICATED LAYOUT -->
     <template v-if="authStore.isAuthenticated">
@@ -122,7 +144,7 @@ const isActive = (path: string) => {
 
       <!-- Sidebar -->
       <aside
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-white/95 backdrop-blur-xl border-r border-slate-200/80 shadow-sm transform transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       >
         <!-- Sidebar Logo -->
@@ -167,34 +189,23 @@ const isActive = (path: string) => {
           </div>
         </div>
 
-        <!-- User Profile Area (Bottom of sidebar) -->
+        <!-- Sidebar footer -->
         <div class="p-4 border-t border-gray-200 shrink-0">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="h-9 w-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm shrink-0">
-                {{ authStore.user?.name.charAt(0) }}
-              </div>
-              <div class="min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ authStore.user?.name }}</p>
-                <p class="text-xs text-gray-500 capitalize truncate">{{ authStore.user?.role }}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-              title="Logout"
-              @click="handleLogout"
-            >
-              <LucideLogOut class="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            class="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            @click="handleLogout"
+          >
+            <LucideLogOut class="h-4 w-4" />
+            <span>Log Out</span>
+          </button>
         </div>
       </aside>
 
       <!-- Main Content Area -->
       <div class="md:ml-64 flex flex-col flex-1 min-w-0">
         <!-- Top Header (Authenticated) -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 sticky top-0 z-30">
+        <header class="h-16 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 sticky top-0 z-30">
           <div class="flex items-center">
             <!-- Mobile hamburger -->
             <button
@@ -211,6 +222,25 @@ const isActive = (path: string) => {
             <NuxtLink v-if="authStore.user?.role === 'patient'" to="/ai-assistant" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-md transition-colors border border-teal-200">
               <LucideBot class="h-3.5 w-3.5" />
               <span>AI Health Assistant</span>
+            </NuxtLink>
+            <NuxtLink
+              :to="profileRoute"
+              class="flex min-w-0 items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-gray-50"
+              aria-label="Open my profile"
+            >
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100 text-sm font-bold text-primary-700 ring-1 ring-gray-200">
+                <img
+                  v-if="profileImageUrl"
+                  :src="profileImageUrl"
+                  :alt="`${authStore.user?.name || 'User'} avatar`"
+                  class="h-full w-full object-cover"
+                />
+                <span v-else>{{ authStore.user?.name?.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="hidden min-w-0 text-left sm:block">
+                <p class="max-w-40 truncate text-sm font-medium text-gray-900">{{ authStore.user?.name }}</p>
+                <p class="max-w-40 truncate text-xs text-gray-500">{{ authStore.user?.email }}</p>
+              </div>
             </NuxtLink>
           </div>
         </header>

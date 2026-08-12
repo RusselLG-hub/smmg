@@ -16,6 +16,9 @@ class User(Base):
         String(255), unique=True, index=True, nullable=False
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    profile_image_url: Mapped[str | None] = mapped_column(
+        String(500), nullable=True
+    )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
         String(50), nullable=False, default="patient", index=True

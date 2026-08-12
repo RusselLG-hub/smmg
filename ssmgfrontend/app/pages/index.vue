@@ -38,9 +38,13 @@ onMounted(async () => {
 
   if (authStore.isAuthenticated && authStore.user) {
     const routes: Record<string, string> = {
-      patient: '/patient/dashboard', doctor: '/doctor/dashboard', staff: '/staff/dashboard', admin: '/admin/dashboard',
+      patient: '/patient/dashboard',
+      doctor: '/doctor/dashboard',
+      staff: '/staff/dashboard',
+      admin: '/admin/dashboard',
     }
-    await router.replace(routes[authStore.user.role] || '/')
+    const target = routes[authStore.user.role] || '/patient/dashboard'
+    await router.replace(target)
     return
   }
 

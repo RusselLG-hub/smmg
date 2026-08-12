@@ -2,6 +2,8 @@ import type {
   AIChatMessage,
   AIChatSession,
   AIChatSessionDetail,
+  AIChatAdminSession,
+  AIChatAdminSessionDetail,
 } from '~~/shared/types/AiIntegration'
 
 export const useAiIntegrationService = () => {
@@ -30,5 +32,11 @@ export const useAiIntegrationService = () => {
         method: 'POST',
         body: { content },
       }),
+
+    getAdminSessions: () =>
+      $api<AIChatAdminSession[]>('/v1/ai-integration/admin/sessions'),
+
+    getAdminSessionDetails: (sessionId: string) =>
+      $api<AIChatAdminSessionDetail>(`/v1/ai-integration/admin/sessions/${sessionId}`),
   }
 }

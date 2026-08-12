@@ -27,6 +27,15 @@ export const useDoctorsService = () => {
         body: data,
       }),
 
+    getMyProfile: () =>
+      $api<Doctor>('/v1/doctors/me'),
+
+    updateMyProfile: (data: DoctorUpdate) =>
+      $api<Doctor>('/v1/doctors/me', {
+        method: 'PUT',
+        body: data,
+      }),
+
     deleteDoctor: (id: string) =>
       $api<void>(`/v1/doctors/${id}`, {
         method: 'DELETE',

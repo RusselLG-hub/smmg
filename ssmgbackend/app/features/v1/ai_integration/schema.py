@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
+from app.features.v1.users.schema import UserRead
 
 
 class AIChatMessageRead(BaseModel):
@@ -44,3 +45,12 @@ class AIChatSessionDetail(BaseModel):
     messages: list[AIChatMessageRead] = []
     created_at: datetime
     updated_at: datetime
+
+
+class AIChatAdminSessionRead(AIChatSessionRead):
+    user: UserRead
+    message_count: int = 0
+
+
+class AIChatAdminSessionDetail(AIChatSessionDetail):
+    user: UserRead

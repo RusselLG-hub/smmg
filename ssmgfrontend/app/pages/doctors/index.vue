@@ -66,7 +66,7 @@ watch(selectedSpecialty, async (newVal) => {
       <div
         v-for="doc in doctorsStore.doctors"
         :key="doc.id"
-        class="card overflow-hidden flex flex-col hover:border-primary-300 transition-colors"
+        class="card card-hover !p-0 overflow-hidden flex flex-col"
       >
         <div class="p-6 flex-1 flex flex-col">
           <div class="flex items-start gap-4 mb-4">

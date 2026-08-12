@@ -6,6 +6,8 @@ from app.features.v1.auth.dependencies import require_role
 from app.features.v1.doctors import schema as doctor_schema
 from app.features.v1.doctors import service as doctor_service
 
+from app.features.v1.users import model as user_model
+
 router = APIRouter(prefix="/v1/doctors", tags=["doctors"])
 
 
@@ -18,6 +20,23 @@ async def list_doctors(
     return await doctor_service.list_doctors(
         db, active_only=active_only, specialty_id=specialty_id
     )
+
+
+@router.get("/me", response_model=doctor_schema.DoctorRead)
+async def get_my_doctor_profile(
+    current_user: user_model.User = Depends(require_role("doctor")),
+    db: AsyncSession = Depends(get_db),
+):
+    return await doctor_service.get_doctor_by_user_id(db, current_user.id)
+
+
+@router.put("/me", response_model=doctor_schema.DoctorRead)
+async def update_my_doctor_profile(
+    data: doctor_schema.DoctorUpdate,
+    current_user: user_model.User = Depends(require_role("doctor")),
+    db: AsyncSession = Depends(get_db),
+):
+    return await doctor_service.update_my_doctor_profile(db, current_user.id, data)
 
 
 @router.get("/{doctor_id}", response_model=doctor_schema.DoctorRead)

@@ -36,6 +36,7 @@ class DoctorCreate(BaseModel):
 
 class DoctorUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
+    email: EmailStr | None = None
     specialty_id: str | None = None
     title: str | None = Field(None, max_length=100)
     phone: str | None = Field(None, max_length=50)

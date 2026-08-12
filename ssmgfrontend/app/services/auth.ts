@@ -2,6 +2,8 @@ import type {
   AuthResponse,
   LoginRequest,
   MessageResponse,
+  PasswordChangeConfirmRequest,
+  ProfileUpdateRequest,
   RegisterRequest,
   ResendVerificationRequest,
   VerifyEmailRequest,
@@ -44,6 +46,23 @@ export const useAuthService = () => {
     getMe: () =>
       $api<User>('/v1/auth/me', {
         method: 'GET',
+      }),
+
+    updateMe: (data: ProfileUpdateRequest) =>
+      $api<User>('/v1/auth/me', {
+        method: 'PATCH',
+        body: data,
+      }),
+
+    requestPasswordChange: () =>
+      $api<MessageResponse>('/v1/auth/password-change/request', {
+        method: 'POST',
+      }),
+
+    confirmPasswordChange: (data: PasswordChangeConfirmRequest) =>
+      $api<MessageResponse>('/v1/auth/password-change/confirm', {
+        method: 'POST',
+        body: data,
       }),
   }
 }

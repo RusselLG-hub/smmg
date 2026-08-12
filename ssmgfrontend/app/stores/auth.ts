@@ -11,6 +11,7 @@ import type {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const loading = ref(false)
+  const initialized = ref(false)
   const error = ref<string | null>(null)
   const pendingVerificationEmail = ref<string | null>(null)
 
@@ -37,6 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
     } finally {
       loading.value = false
+      initialized.value = true
     }
   }
 
@@ -46,6 +48,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authService.login(credentials)
       user.value = response.user
+      initialized.value = true
       return response
     } catch (err: any) {
       error.value = err?.data?.detail || err?.message || 'Login failed'
@@ -111,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       user.value = null
       pendingVerificationEmail.value = null
+      initialized.value = true
       loading.value = false
     }
   }
@@ -118,6 +122,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     loading,
+    initialized,
     error,
     pendingVerificationEmail,
     setPendingVerificationEmail,

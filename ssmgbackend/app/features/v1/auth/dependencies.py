@@ -35,6 +35,9 @@ async def get_current_user(
     if not user:
         raise UnauthorizedException(detail="User not found")
 
+    if not user.is_email_verified:
+        raise ForbiddenException(detail="Email verification required")
+
     if not user.is_active:
         raise ForbiddenException(detail="Account is inactive")
 

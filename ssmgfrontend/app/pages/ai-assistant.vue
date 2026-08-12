@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { computed, ref, onMounted, nextTick, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useAiIntegrationStore } from '~/stores/aiIntegration'
+import { usePatientService } from '~/services/patient'
 
 definePageMeta({
   middleware: 'auth',
@@ -9,12 +10,22 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const aiStore = useAiIntegrationStore()
+const patientService = usePatientService()
+const profileImageUrl = useState<string | null>('patient-profile-image-url', () => null)
 
 const inputMessage = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
 const sidebarOpen = ref(false)
+const hasActiveChat = computed(() => Boolean(aiStore.activeSessionId && aiStore.activeSession))
 
 onMounted(async () => {
+  if (authStore.user?.role === 'patient' && !profileImageUrl.value) {
+    try {
+      const profile = await patientService.getMyProfile()
+      profileImageUrl.value = profile.profile_image_url || null
+    } catch {}
+  }
+
   await aiStore.fetchSessions()
   if (aiStore.sessions.length === 0) {
     await aiStore.createNewSession()
@@ -39,7 +50,7 @@ watch(
 
 const handleSendMessage = async () => {
   const text = inputMessage.value.trim()
-  if (!text || aiStore.sending) return
+  if (!text || aiStore.sending || !hasActiveChat.value) return
   inputMessage.value = ''
   await aiStore.sendMessage(text)
   scrollToBottom()
@@ -53,11 +64,25 @@ const handleCreateNewChat = async () => {
 const handleDeleteChat = async (id: string) => {
   if (!confirm('Are you sure you want to delete this chat session?')) return
   await aiStore.deleteSession(id)
+  if (!aiStore.activeSessionId) {
+    inputMessage.value = ''
+  }
 }
 
 const formatDate = (isoStr: string) => {
   const d = new Date(isoStr)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const formatMessageContent = (content: string) => {
+  return content
+    .replace(/\*\*/g, '')
+    .replace(/__/g, '')
+    .replace(/^\s*#{1,6}\s+/gm, '')
+    .replace(/^\s*[*+]\s+/gm, '- ')
+    .replace(/```/g, '')
+    .replace(/`/g, '')
+    .trim()
 }
 </script>
 
@@ -74,7 +99,7 @@ const formatDate = (isoStr: string) => {
 
       <div class="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-100 px-2.5 py-1 rounded-md">
         <LucidePhoneCall class="h-3.5 w-3.5" />
-        <span>Emergencies: Call Local Emergency Services</span>
+        <span>Philippine emergencies: Call 911</span>
       </div>
     </div>
 
@@ -202,7 +227,7 @@ const formatDate = (isoStr: string) => {
                     : 'bg-gray-100 text-gray-900 rounded-bl-none border border-gray-200'
                 "
               >
-                <div class="whitespace-pre-wrap">{{ msg.content }}</div>
+                <div class="whitespace-pre-wrap">{{ formatMessageContent(msg.content) }}</div>
                 <div
                   class="text-[10px] text-right font-mono mt-1"
                   :class="msg.role === 'user' ? 'text-primary-200' : 'text-gray-600'"
@@ -212,8 +237,17 @@ const formatDate = (isoStr: string) => {
               </div>
 
               <!-- User Avatar -->
-              <div v-if="msg.role === 'user'" class="h-8 w-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shrink-0 mt-1">
-                {{ authStore.user?.name.charAt(0) }}
+              <div
+                v-if="msg.role === 'user'"
+                class="h-8 w-8 rounded-full overflow-hidden bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shrink-0 mt-1 ring-1 ring-primary-200"
+              >
+                <img
+                  v-if="profileImageUrl"
+                  :src="profileImageUrl"
+                  :alt="authStore.user?.name || 'User'"
+                  class="h-full w-full object-cover"
+                />
+                <LucideUser v-else class="h-4.5 w-4.5 text-primary-600" />
               </div>
             </div>
 
@@ -228,6 +262,27 @@ const formatDate = (isoStr: string) => {
               </div>
             </div>
           </template>
+
+          <div v-else class="flex h-full items-center justify-center py-12">
+            <div class="max-w-sm text-center">
+              <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100 text-primary-700">
+                <LucideMessageSquarePlus class="h-6 w-6" />
+              </div>
+              <h3 class="mt-4 text-base font-bold text-gray-900">Create a chat first</h3>
+              <p class="mt-2 text-xs leading-5 text-gray-500">
+                Add a new consultation chat before sending a message to the health assistant.
+              </p>
+              <button
+                type="button"
+                :disabled="aiStore.loading"
+                class="btn btn-primary mt-5 px-5 py-2.5"
+                @click="handleCreateNewChat"
+              >
+                <LucidePlus class="h-4 w-4" />
+                <span>Create new chat</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Input Box Bar -->
@@ -236,14 +291,14 @@ const formatDate = (isoStr: string) => {
             <input
               v-model="inputMessage"
               type="text"
-              placeholder="Ask about general health information or basic first-aid..."
-              :disabled="aiStore.sending"
+              :placeholder="hasActiveChat ? 'Ask about general health information or basic first-aid...' : 'Create a chat before sending a message'"
+              :disabled="aiStore.sending || !hasActiveChat"
               class="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none disabled:bg-gray-50 text-gray-900"
             />
 
             <button
               type="submit"
-              :disabled="!inputMessage.trim() || aiStore.sending"
+              :disabled="!inputMessage.trim() || aiStore.sending || !hasActiveChat"
               class="px-5 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5"
             >
               <LucideSend class="h-4 w-4" />

@@ -262,7 +262,7 @@ const formatTime = (isoStr: string) => {
     </div>
 
     <!-- CANCEL APPOINTMENT MODAL -->
-    <div v-if="showCancelModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Cancel appointment">
+    <div v-if="showCancelModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Cancel appointment" @click.self="showCancelModal = false">
       <div class="modal-panel max-w-md space-y-4">
         <h3 class="text-lg font-bold text-gray-900">Cancel Appointment</h3>
         <p class="text-xs text-gray-600">
@@ -290,7 +290,7 @@ const formatTime = (isoStr: string) => {
     </div>
 
     <!-- RESCHEDULE APPOINTMENT MODAL -->
-    <div v-if="showRescheduleModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Reschedule appointment">
+    <div v-if="showRescheduleModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Reschedule appointment" @click.self="showRescheduleModal = false">
       <div class="modal-panel max-w-md space-y-4">
         <h3 class="text-lg font-bold text-gray-900">Reschedule Appointment</h3>
 

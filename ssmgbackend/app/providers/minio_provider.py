@@ -6,7 +6,14 @@ from minio import Minio
 from app.core.config import settings
 
 minio_client = Minio(
-    endpoint=settings.MINIO_ENDPOINT,
+    endpoint=settings.minio_endpoint,
+    access_key=settings.MINIO_ACCESS_KEY,
+    secret_key=settings.MINIO_SECRET_KEY,
+    secure=settings.MINIO_SECURE,
+)
+
+minio_public_client = Minio(
+    endpoint=settings.MINIO_PUBLIC_ENDPOINT,
     access_key=settings.MINIO_ACCESS_KEY,
     secret_key=settings.MINIO_SECRET_KEY,
     secure=settings.MINIO_SECURE,
@@ -35,7 +42,7 @@ def upload_file(
 
 
 def get_presigned_url(object_name: str, expires_hours: int = 1) -> str:
-    return minio_client.presigned_get_object(
+    return minio_public_client.presigned_get_object(
         bucket_name=settings.MINIO_BUCKET,
         object_name=object_name,
         expires=timedelta(hours=expires_hours),

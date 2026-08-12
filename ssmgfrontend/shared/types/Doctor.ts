@@ -29,6 +29,7 @@ export interface DoctorCreate {
 }
 
 export interface DoctorUpdate {
+  email?: string
   name?: string
   specialty_id?: string | null
   title?: string | null

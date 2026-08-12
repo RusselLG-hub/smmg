@@ -76,11 +76,13 @@ export const useAiIntegrationStore = defineStore('aiIntegration', () => {
   }
 
   const sendMessage = async (content: string) => {
-    if (!activeSessionId.value) return
+    if (!activeSessionId.value || !activeSession.value) {
+      error.value = 'Create a chat before sending a message'
+      return
+    }
     sending.value = true
     error.value = null
 
-    // Optimistic UI push of user message
     const tempUserMsg = {
       id: 'temp-' + Date.now(),
       session_id: activeSessionId.value,
@@ -93,17 +95,14 @@ export const useAiIntegrationStore = defineStore('aiIntegration', () => {
     }
 
     try {
-      const assistantMsg = await aiService.sendMessage(activeSessionId.value, content)
+      await aiService.sendMessage(activeSessionId.value, content)
       if (activeSession.value) {
-        // Replace temp or refresh session
         await selectSession(activeSessionId.value)
       }
-      // Update session title list if needed
       await fetchSessions()
     } catch (err: any) {
       error.value = err?.data?.detail || 'Failed to send AI message'
       if (activeSession.value) {
-        // Remove temp message on error
         activeSession.value.messages = activeSession.value.messages.filter((m) => m.id !== tempUserMsg.id)
       }
     } finally {

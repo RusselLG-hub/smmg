@@ -53,7 +53,15 @@ const formatTime = (isoStr: string) => {
         <p class="text-teal-100 text-sm mt-1">Manage today's consultations and weekly working schedules</p>
       </div>
 
-      <div class="flex gap-3">
+      <div class="flex flex-wrap gap-3">
+        <NuxtLink
+          to="/doctor/profile"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-xl transition-colors backdrop-blur-sm"
+        >
+          <LucideUser class="h-4 w-4" />
+          <span>My Profile & Avatar</span>
+        </NuxtLink>
+
         <NuxtLink
           to="/admin/schedules"
           class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-xl transition-colors backdrop-blur-sm"
@@ -129,7 +137,7 @@ const formatTime = (isoStr: string) => {
       </div>
 
       <!-- Today's Consultations List -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+      <div class="card p-6 space-y-4">
         <div class="flex items-center justify-between pb-4 border-b border-gray-100">
           <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
             <LucideCalendar class="h-5 w-5 text-teal-600" />

@@ -33,7 +33,7 @@ onMounted(async () => {
       <div
         v-for="s in specialtiesStore.specialties"
         :key="s.id"
-        class="card p-6 flex flex-col hover:border-primary-300 transition-colors"
+        class="card card-hover flex flex-col"
       >
         <div class="flex items-center gap-3 mb-3">
           <div class="h-10 w-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">

@@ -33,7 +33,7 @@ onMounted(async () => {
       <div
         v-for="srv in clinicServicesStore.services"
         :key="srv.id"
-        class="card overflow-hidden flex flex-col hover:border-primary-300 transition-colors"
+        class="card card-hover !p-0 overflow-hidden flex flex-col"
       >
         <div v-if="srv.image_url" class="h-44 w-full bg-gray-100 overflow-hidden relative">
           <img :src="srv.image_url" :alt="srv.name" class="h-full w-full object-cover" />

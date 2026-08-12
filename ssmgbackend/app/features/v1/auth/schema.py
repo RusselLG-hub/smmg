@@ -22,6 +22,16 @@ class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
 
+class ProfileUpdateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    profile_image_url: str | None = Field(None, max_length=500)
+
+
+class PasswordChangeConfirmRequest(BaseModel):
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+
 class AuthResponse(BaseModel):
     user: UserRead
     message: str

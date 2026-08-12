@@ -31,11 +31,18 @@ const handleLogin = async () => {
 
   isSubmitting.value = true
   try {
-    await authStore.login({
+    const res = await authStore.login({
       email: form.email,
       password: form.password,
     })
-    await router.push('/')
+    const roleRoutes: Record<string, string> = {
+      patient: '/patient/dashboard',
+      doctor: '/doctor/dashboard',
+      staff: '/staff/dashboard',
+      admin: '/admin/dashboard',
+    }
+    const target = roleRoutes[res.user?.role || authStore.user?.role || ''] || '/patient/dashboard'
+    await router.push(target)
   } catch (err: any) {
     const detail = String(err?.data?.detail || 'Invalid email or password')
     if (isUnverifiedEmailError(detail)) {

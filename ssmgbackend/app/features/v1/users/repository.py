@@ -35,7 +35,7 @@ async def create_user(
         name=user_create.name.strip(),
         hashed_password=hashed_password,
         role=role,
-        is_active=True,
+        is_active=(role != "patient"),
         is_email_verified=(role != "patient"),  # Staff/Admin/Doctor auto-verified
     )
     db.add(user)
@@ -48,6 +48,7 @@ async def mark_email_verified(db: AsyncSession, user_id: str) -> User | None:
     user = await get_by_id(db, user_id)
     if user:
         user.is_email_verified = True
+        user.is_active = True
         await db.commit()
         await db.refresh(user)
     return user
@@ -57,6 +58,41 @@ async def toggle_user_active(db: AsyncSession, user_id: str) -> User | None:
     user = await get_by_id(db, user_id)
     if user:
         user.is_active = not user.is_active
+        await db.commit()
+        await db.refresh(user)
+    return user
+
+
+async def update_name(db: AsyncSession, user_id: str, name: str) -> User | None:
+    user = await get_by_id(db, user_id)
+    if user:
+        user.name = name.strip()
+        await db.commit()
+        await db.refresh(user)
+    return user
+
+
+async def update_profile(
+    db: AsyncSession,
+    user_id: str,
+    name: str,
+    profile_image_url: str | None,
+) -> User | None:
+    user = await get_by_id(db, user_id)
+    if user:
+        user.name = name.strip()
+        user.profile_image_url = profile_image_url
+        await db.commit()
+        await db.refresh(user)
+    return user
+
+
+async def update_password(
+    db: AsyncSession, user_id: str, hashed_password: str
+) -> User | None:
+    user = await get_by_id(db, user_id)
+    if user:
+        user.hashed_password = hashed_password
         await db.commit()
         await db.refresh(user)
     return user

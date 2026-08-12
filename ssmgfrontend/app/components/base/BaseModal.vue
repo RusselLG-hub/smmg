@@ -70,10 +70,10 @@ const maxWidthClass = computed(() => {
           leave-from-class="opacity-100 translate-y-0 sm:scale-100"
           leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         >
-          <div v-if="modelValue" class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[90vh] sm:rounded-2xl" :class="maxWidthClass">
+          <div v-if="modelValue" class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-white/70 bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-3xl" :class="maxWidthClass">
             
             <!-- Header -->
-            <div class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:px-6">
+            <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 bg-gradient-to-r from-primary-50 to-teal-50 px-5 py-4 sm:px-6">
               <div class="min-w-0">
                 <h3 :id="titleId" class="text-lg font-semibold text-gray-900">{{ title }}</h3>
                 <p v-if="description" class="mt-1 text-sm text-gray-500">{{ description }}</p>
@@ -90,7 +90,7 @@ const maxWidthClass = computed(() => {
             </div>
 
             <!-- Footer -->
-            <div v-if="$slots.footer" class="flex shrink-0 flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 [&>*]:w-full sm:[&>*]:w-auto">
+            <div v-if="$slots.footer" class="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/90 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 [&>*]:min-h-11 [&>*]:w-full sm:[&>*]:w-auto">
               <slot name="footer" />
             </div>
             

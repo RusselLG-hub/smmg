@@ -119,7 +119,7 @@ const formatTime = (isoStr: string) => {
     </BaseEmptyState>
 
     <!-- Appointment Table -->
-    <div v-else class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+    <div v-else class="card-table">
       <table class="w-full text-left text-sm text-gray-700">
         <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold">
           <tr>

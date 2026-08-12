@@ -1,1 +1,0 @@
-# ssmg backend app

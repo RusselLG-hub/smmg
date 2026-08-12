@@ -10,7 +10,17 @@
   }
 
   body {
-    @apply font-sans text-gray-900 antialiased bg-gray-50;
+    @apply min-h-screen font-sans text-gray-900 antialiased;
+    background-color: #f4f8fb;
+    background-image:
+      radial-gradient(circle at 8% 0%, rgb(219 234 254 / 0.7), transparent 30rem),
+      radial-gradient(circle at 92% 8%, rgb(204 251 241 / 0.55), transparent 28rem),
+      linear-gradient(180deg, #f8fbfd 0%, #f3f7fa 48%, #eef5f7 100%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-primary-100 text-primary-900;
   }
 
   section[id] {
@@ -29,18 +39,36 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
   }
 
+  .app-shell {
+    background:
+      radial-gradient(circle at 80% 0%, rgb(204 251 241 / 0.32), transparent 24rem),
+      linear-gradient(180deg, rgb(248 251 253 / 0.96), rgb(241 247 249 / 0.96));
+  }
+
   /* Card surface */
   .card {
-    @apply bg-white rounded-lg border border-gray-200;
+    @apply rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm sm:p-6;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 10px 30px rgb(15 118 110 / 0.045);
+  }
+
+  /* Card surface for table containers (no inner padding so tables align edge-to-edge) */
+  .card-table {
+    @apply overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/95 shadow-sm;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 10px 30px rgb(15 118 110 / 0.045);
+  }
+
+  /* Interactive card hover state */
+  .card-hover {
+    @apply transition-all duration-200 hover:border-primary-300 hover:shadow-md;
   }
 
   /* Button variants */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-primary {
-    @apply btn px-4 py-2 bg-primary-600 text-white hover:bg-primary-700 shadow-sm;
+    @apply btn bg-primary-600 px-4 py-2 text-white shadow-sm hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-md active:translate-y-0;
   }
 
   .btn-secondary {
@@ -61,15 +89,15 @@
   }
 
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
 
   .form-select {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
 
   .form-textarea {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-y;
+    @apply w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
 
   .legal-content {
@@ -93,19 +121,43 @@
   }
 
   .modal-overlay {
-    @apply fixed inset-0 z-50 flex items-end justify-center bg-gray-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-6;
+    @apply fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-6;
+    animation: modal-fade-in 160ms ease-out;
   }
 
   .modal-panel {
-    @apply max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6;
+    @apply max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-white/70 bg-white p-5 shadow-2xl sm:max-h-[90vh] sm:rounded-3xl sm:p-6;
+    animation: modal-panel-in 200ms ease-out;
+    box-shadow: 0 28px 80px rgb(15 23 42 / 0.28);
+  }
+
+  .modal-panel > h3 {
+    @apply -mx-5 -mt-5 border-b border-slate-200 bg-gradient-to-r from-primary-50 to-teal-50 px-5 py-5 text-xl sm:-mx-6 sm:-mt-6 sm:px-6;
   }
 
   .modal-actions {
-    @apply mt-5 flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end;
+    @apply -mx-5 -mb-5 mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/80 px-5 py-4 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6;
   }
 
   .modal-actions > button,
   .modal-actions > a {
     @apply min-h-11 w-full sm:w-auto;
+  }
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-panel-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal-panel {
+    animation: none;
   }
 }

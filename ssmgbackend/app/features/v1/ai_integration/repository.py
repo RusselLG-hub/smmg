@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.v1.ai_integration.model import AIChatMessage, AIChatSession
@@ -36,6 +36,20 @@ async def list_user_sessions(
     )
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+
+async def list_all_sessions(
+    db: AsyncSession, limit: int = 200
+) -> list[tuple[AIChatSession, int]]:
+    stmt = (
+        select(AIChatSession, func.count(AIChatMessage.id))
+        .outerjoin(AIChatMessage, AIChatMessage.session_id == AIChatSession.id)
+        .group_by(AIChatSession.id)
+        .order_by(AIChatSession.updated_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    return [(session, count) for session, count in result.all()]
 
 
 async def delete_session(db: AsyncSession, session: AIChatSession) -> None:

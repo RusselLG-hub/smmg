@@ -171,7 +171,7 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
       </BaseEmptyState>
 
       <!-- Schedule Table -->
-      <div v-else class="card overflow-x-auto">
+      <div v-else class="card-table">
         <table class="w-full text-left text-sm text-gray-700">
           <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold">
             <tr>
@@ -216,7 +216,7 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
     </div>
 
     <!-- MODAL: ADD SCHEDULE -->
-    <div v-if="showAddModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Add working hours">
+    <div v-if="showAddModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Add working hours" @click.self="showAddModal = false">
       <div class="modal-panel max-w-md space-y-4">
         <h3 class="text-lg font-bold text-gray-900">Add Working Hours</h3>
 

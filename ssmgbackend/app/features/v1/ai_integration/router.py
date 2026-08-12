@@ -1,14 +1,38 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.limiter import limiter
 from app.db.session import get_db
 from app.features.v1.ai_integration import schema as ai_schema
 from app.features.v1.ai_integration import service as ai_service
-from app.features.v1.auth.dependencies import get_current_user
+from app.features.v1.auth.dependencies import get_current_user, require_role
 from app.features.v1.users import model as user_model
 
 router = APIRouter(prefix="/v1/ai-integration", tags=["ai-integration"])
+
+
+@router.get(
+    "/admin/sessions",
+    response_model=list[ai_schema.AIChatAdminSessionRead],
+)
+async def list_all_chat_sessions(
+    limit: int = Query(200, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: user_model.User = Depends(require_role("admin")),
+):
+    return await ai_service.list_admin_sessions(db, limit=limit)
+
+
+@router.get(
+    "/admin/sessions/{session_id}",
+    response_model=ai_schema.AIChatAdminSessionDetail,
+)
+async def get_any_chat_session(
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: user_model.User = Depends(require_role("admin")),
+):
+    return await ai_service.get_admin_session_details(db, session_id)
 
 
 @router.post(

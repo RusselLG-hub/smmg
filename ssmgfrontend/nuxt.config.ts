@@ -17,9 +17,9 @@ export default defineNuxtConfig({
   ],
 
   runtimeConfig: {
-    apiInternalBaseUrl: '',
+    apiInternalBaseUrl: 'http://localhost:8000',
     public: {
-      apiBaseUrl: '',
+      apiBaseUrl: 'http://localhost:8000',
     },
   },
 

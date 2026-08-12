@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useDashboardStore } from '~/stores/dashboard'
 import { useUsersService } from '~/services/users'
@@ -18,14 +18,48 @@ const usersList = ref<User[]>([])
 const selectedRoleFilter = ref<string>('')
 const loadingUsers = ref(false)
 
-const showStaffModal = ref(false)
 const actionSuccess = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 
-const staffForm = reactive({
-  email: '',
-  name: '',
-  password: '',
+const appointmentChart = computed(() => {
+  const summary = dashboardStore.adminSummary
+  const items = [
+    { label: 'Pending', value: summary?.pending_count || 0, color: '#f59e0b' },
+    { label: 'Confirmed', value: summary?.confirmed_count || 0, color: '#10b981' },
+    { label: 'Completed', value: summary?.completed_count || 0, color: '#3b82f6' },
+    { label: 'Cancelled', value: summary?.cancelled_count || 0, color: '#ef4444' },
+  ]
+  const total = items.reduce((sum, item) => sum + item.value, 0)
+  let current = 0
+  const stops = items.map((item) => {
+    const start = current
+    current += total ? (item.value / total) * 100 : 0
+    return `${item.color} ${start}% ${current}%`
+  })
+  return {
+    items,
+    total,
+    background: total ? `conic-gradient(${stops.join(', ')})` : '#e5e7eb',
+  }
+})
+
+const userRoleChart = computed(() => {
+  const summary = dashboardStore.adminSummary
+  const patients = summary?.total_patients || 0
+  const doctors = summary?.total_doctors || 0
+  const staff = summary?.total_staff || 0
+  const admin = Math.max(0, (summary?.total_users || 0) - patients - doctors - staff)
+  const items = [
+    { label: 'Patients', value: patients, color: 'bg-primary-500' },
+    { label: 'Doctors', value: doctors, color: 'bg-teal-500' },
+    { label: 'Staff', value: staff, color: 'bg-blue-500' },
+    { label: 'Admins', value: admin, color: 'bg-purple-500' },
+  ]
+  const maximum = Math.max(1, ...items.map((item) => item.value))
+  return items.map((item) => ({
+    ...item,
+    percentage: (item.value / maximum) * 100,
+  }))
 })
 
 onMounted(async () => {
@@ -50,27 +84,6 @@ watch(selectedRoleFilter, async () => {
   await fetchUsers()
 })
 
-const handleCreateStaff = async () => {
-  actionError.value = null
-  actionSuccess.value = null
-  try {
-    await usersService.createStaffUser({
-      email: staffForm.email,
-      name: staffForm.name,
-      password: staffForm.password,
-    })
-    actionSuccess.value = 'Staff account created successfully.'
-    showStaffModal.value = false
-    staffForm.email = ''
-    staffForm.name = ''
-    staffForm.password = ''
-    await fetchUsers()
-    await dashboardStore.fetchAdminDashboard()
-  } catch (err: any) {
-    actionError.value = err?.data?.detail || 'Failed to create staff account.'
-  }
-}
-
 const handleToggleUserActive = async (userId: string) => {
   actionError.value = null
   actionSuccess.value = null
@@ -94,18 +107,10 @@ const handleToggleUserActive = async (userId: string) => {
           System Administration Hub
         </span>
         <h1 class="text-3xl font-bold tracking-tight">Admin Executive Dashboard</h1>
-        <p class="text-gray-300 text-sm mt-1">Full system metrics, clinic domain management, and staff account controls</p>
+        <p class="text-gray-300 text-sm mt-1">Full system metrics, clinic domain management, and user account controls</p>
       </div>
 
       <div class="flex gap-3">
-        <button
-          class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-xl transition-colors backdrop-blur-sm"
-          @click="showStaffModal = true"
-        >
-          <LucideUserPlus class="h-4 w-4" />
-          <span>Add Staff Member</span>
-        </button>
-
         <NuxtLink
           to="/admin"
           class="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-900 font-semibold text-sm rounded-xl hover:bg-gray-100 transition-colors shadow"
@@ -150,7 +155,7 @@ const handleToggleUserActive = async (userId: string) => {
         @click="activeTab = 'users'"
       >
         <LucideUsers class="h-4 w-4" />
-        <span>User & Staff Accounts ({{ usersList.length }})</span>
+        <span>User Accounts ({{ usersList.length }})</span>
       </button>
     </div>
 
@@ -219,6 +224,61 @@ const handleToggleUserActive = async (userId: string) => {
           </div>
         </div>
 
+        <!-- Dashboard Charts -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <section class="card p-6" aria-labelledby="appointment-chart-title">
+            <div class="mb-6">
+              <h2 id="appointment-chart-title" class="text-base font-bold text-gray-900">Appointment Status Distribution</h2>
+              <p class="mt-1 text-xs text-gray-500">Current appointment totals grouped by status</p>
+            </div>
+
+            <div class="flex flex-col items-center gap-7 sm:flex-row sm:justify-center">
+              <div
+                class="relative h-44 w-44 shrink-0 rounded-full"
+                :style="{ background: appointmentChart.background }"
+                role="img"
+                :aria-label="`${appointmentChart.total} appointments shown by status`"
+              >
+                <div class="absolute inset-8 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
+                  <span class="text-3xl font-bold text-gray-900">{{ appointmentChart.total }}</span>
+                  <span class="text-xs text-gray-500">Appointments</span>
+                </div>
+              </div>
+
+              <div class="grid w-full grid-cols-2 gap-3 sm:w-auto sm:grid-cols-1">
+                <div v-for="item in appointmentChart.items" :key="item.label" class="flex items-center gap-3">
+                  <span class="h-3 w-3 shrink-0 rounded-full" :style="{ backgroundColor: item.color }"></span>
+                  <span class="min-w-20 text-sm text-gray-600">{{ item.label }}</span>
+                  <span class="ml-auto text-sm font-bold text-gray-900">{{ item.value }}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card p-6" aria-labelledby="user-chart-title">
+            <div class="mb-6">
+              <h2 id="user-chart-title" class="text-base font-bold text-gray-900">Users by Role</h2>
+              <p class="mt-1 text-xs text-gray-500">Relative account totals across the four system roles</p>
+            </div>
+
+            <div class="space-y-5">
+              <div v-for="item in userRoleChart" :key="item.label">
+                <div class="mb-1.5 flex items-center justify-between text-sm">
+                  <span class="font-medium text-gray-700">{{ item.label }}</span>
+                  <span class="font-bold text-gray-900">{{ item.value }}</span>
+                </div>
+                <div class="h-4 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    class="h-full min-w-0 rounded-full transition-all duration-500"
+                    :class="item.color"
+                    :style="{ width: `${item.percentage}%` }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
         <!-- Domain Catalog Metrics & Shortcuts -->
         <div class="space-y-4">
           <h2 class="text-base font-bold text-gray-900">Clinic Infrastructure & Management Shortcuts</h2>
@@ -267,7 +327,7 @@ const handleToggleUserActive = async (userId: string) => {
       </div>
     </div>
 
-    <!-- TAB 2: USER & STAFF ACCOUNTS MANAGEMENT -->
+    <!-- TAB 2: USER ACCOUNTS MANAGEMENT -->
     <div v-if="activeTab === 'users'" class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -284,13 +344,6 @@ const handleToggleUserActive = async (userId: string) => {
             <option value="admin">Admin</option>
           </select>
 
-          <button
-            class="px-4 py-2 bg-primary-600 text-white rounded-lg text-xs font-semibold hover:bg-primary-700 shadow-sm flex items-center gap-1.5 shrink-0"
-            @click="showStaffModal = true"
-          >
-            <LucidePlus class="h-4 w-4" />
-            <span>Create Staff Account</span>
-          </button>
         </div>
       </div>
 
@@ -298,7 +351,7 @@ const handleToggleUserActive = async (userId: string) => {
         <LucideLoader2 class="h-8 w-8 text-primary-600 animate-spin" />
       </div>
 
-      <div v-else class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+      <div v-else class="card-table">
         <table class="w-full text-left text-sm text-gray-700">
           <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold text-xs uppercase">
             <tr>
@@ -350,33 +403,5 @@ const handleToggleUserActive = async (userId: string) => {
       </div>
     </div>
 
-    <!-- MODAL: CREATE STAFF ACCOUNT -->
-    <div v-if="showStaffModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Create staff account">
-      <div class="modal-panel max-w-md space-y-4">
-        <h3 class="text-lg font-bold text-gray-900">Create Staff Account</h3>
-
-        <form class="space-y-3" @submit.prevent="handleCreateStaff">
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
-            <input v-model="staffForm.name" type="text" required placeholder="John Doe" class="w-full px-3 py-2 border rounded-lg text-sm" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
-            <input v-model="staffForm.email" type="email" required placeholder="staff@example.com" class="w-full px-3 py-2 border rounded-lg text-sm" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
-            <input v-model="staffForm.password" type="password" required minlength="8" placeholder="••••••••" class="w-full px-3 py-2 border rounded-lg text-sm" />
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800" @click="showStaffModal = false">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">Save Staff Member</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>

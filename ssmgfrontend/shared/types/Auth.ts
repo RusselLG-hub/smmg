@@ -20,6 +20,16 @@ export interface ResendVerificationRequest {
   email: string
 }
 
+export interface ProfileUpdateRequest {
+  name: string
+  profile_image_url?: string | null
+}
+
+export interface PasswordChangeConfirmRequest {
+  code: string
+  new_password: string
+}
+
 export interface AuthResponse {
   user: User
   message: string

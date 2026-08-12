@@ -7,10 +7,11 @@ from app.core.exceptions import (
     NotFoundException,
     ServiceUnavailableException,
 )
-from app.features.v1.ai_integration import chat as ai_chat
+from app.features.v1.ai_integration import prompts
 from app.features.v1.ai_integration import repository as ai_repository
 from app.features.v1.ai_integration import schema as ai_schema
 from app.features.v1.users import model as user_model
+from app.providers.ai_chat import AiProviderError, generate_chat_response
 
 
 async def create_chat_session(
@@ -36,6 +37,29 @@ async def get_session_details(
     if session.user_id != current_user.id:
         raise ForbiddenException(detail="Access denied to this chat session.")
     return ai_schema.AIChatSessionDetail.model_validate(session)
+
+
+async def list_admin_sessions(
+    db: AsyncSession, limit: int = 200
+) -> list[ai_schema.AIChatAdminSessionRead]:
+    rows = await ai_repository.list_all_sessions(db, limit=limit)
+    return [
+        ai_schema.AIChatAdminSessionRead(
+            **ai_schema.AIChatSessionRead.model_validate(session).model_dump(),
+            user=session.user,
+            message_count=message_count,
+        )
+        for session, message_count in rows
+    ]
+
+
+async def get_admin_session_details(
+    db: AsyncSession, session_id: str
+) -> ai_schema.AIChatAdminSessionDetail:
+    session = await ai_repository.get_session_by_id(db, session_id)
+    if not session:
+        raise NotFoundException(detail="Chat session not found.")
+    return ai_schema.AIChatAdminSessionDetail.model_validate(session)
 
 
 async def delete_chat_session(
@@ -78,20 +102,29 @@ async def send_user_message(
         db, session_id=session_id, limit=settings.AI_HISTORY_MESSAGE_LIMIT
     )
 
-    history_payload = []
+    history: list[tuple[str, str]] = []
     for msg in recent_db_msgs:
         if msg.id != user_msg.id:  # Exclude current prompt from history payload
-            history_payload.append({"role": msg.role, "content": msg.content})
+            history.append((msg.role, msg.content))
 
     # 4. Generate AI Response
     try:
-        assistant_reply = await ai_chat.generate_ai_response(
-            messages_history=history_payload, user_prompt=clean_content
+        assistant_reply = await generate_chat_response(
+            system_prompt=prompts.SYSTEM_PROMPT,
+            history=history,
+            user_message=clean_content,
         )
-    except Exception as e:
+    except AiProviderError as exc:
+        if exc.code == "provider_not_configured":
+            assistant_reply = prompts.get_unconfigured_response(clean_content)
+        else:
+            raise ServiceUnavailableException(
+                detail="AI assistant is temporarily unavailable. Please try again later."
+            ) from exc
+    except Exception as exc:
         raise ServiceUnavailableException(
             detail="AI assistant is temporarily unavailable. Please try again later."
-        )
+        ) from exc
 
     # 5. Persist Assistant Message
     assistant_msg = await ai_repository.create_message(

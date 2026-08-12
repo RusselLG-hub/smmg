@@ -27,6 +27,16 @@ async def get_doctor(
     return doctor_schema.DoctorRead.model_validate(item)
 
 
+async def get_doctor_by_user_id(
+    db: AsyncSession, user_id: str
+) -> doctor_schema.DoctorRead:
+    item = await doctor_repository.get_by_user_id(db, user_id)
+    if not item:
+        item = await doctor_repository.get_or_create(db, user_id=user_id)
+        item = await doctor_repository.get_by_id(db, item.id)
+    return doctor_schema.DoctorRead.model_validate(item)
+
+
 async def create_doctor(
     db: AsyncSession, data: doctor_schema.DoctorCreate
 ) -> doctor_schema.DoctorRead:
@@ -45,7 +55,6 @@ async def create_doctor(
         name=data.name,
         password=data.password,
     )
-    # Admin-created doctor accounts have role="doctor" and pre-verified email
     user = await user_repository.create_user(
         db, user_create=user_create, hashed_password=hashed_pw, role="doctor"
     )
@@ -81,6 +90,12 @@ async def update_doctor(
 
     if data.name:
         doctor.user.name = data.name.strip()
+    if data.email and data.email.lower() != doctor.user.email:
+        existing_user = await user_repository.get_by_email(db, data.email)
+        if existing_user:
+            raise ConflictException(detail="Email is already registered")
+        doctor.user.email = data.email.lower()
+    if data.name or data.email:
         await db.commit()
 
     updated = await doctor_repository.update(db, doctor_id, data)
@@ -91,12 +106,21 @@ async def update_doctor(
     return doctor_schema.DoctorRead.model_validate(doctor_full)
 
 
+async def update_my_doctor_profile(
+    db: AsyncSession, user_id: str, data: doctor_schema.DoctorUpdate
+) -> doctor_schema.DoctorRead:
+    doctor = await doctor_repository.get_by_user_id(db, user_id)
+    if not doctor:
+        doctor = await doctor_repository.get_or_create(db, user_id=user_id)
+
+    return await update_doctor(db, doctor.id, data)
+
+
 async def delete_doctor(db: AsyncSession, doctor_id: str) -> None:
     doctor = await doctor_repository.get_by_id(db, doctor_id)
     if not doctor:
         raise NotFoundException(detail="Doctor profile not found")
 
-    # Deleting doctor profile also handles user deletion if desired or cascade
     user_id = doctor.user_id
     await doctor_repository.delete(db, doctor_id)
     user = await user_repository.get_by_id(db, user_id)
