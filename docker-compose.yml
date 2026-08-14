@@ -22,7 +22,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/ssmg
     command: >-
-      sh -c "python -m app.scripts.seed_admin &&
+      sh -c "alembic upgrade head &&
+      python -m app.scripts.seed_admin &&
       python -m app.scripts.seed_catalog &&
       python -m app.scripts.seed_workforce &&
       exec uvicorn app.main:app --host 0.0.0.0 --port 8000"
