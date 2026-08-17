@@ -14,6 +14,15 @@ SSMG is a role-based healthcare appointment management system with doctor discov
 
 All seeded doctor and staff accounts use the password `ChangeMe123!`.
 
+### Administrator login
+
+| Environment | Email | Password |
+| --- | --- | --- |
+| Staging prototype | `admin@gmail.com` | Use the private password configured as `ADMIN_PASSWORD` in the deployment secret |
+| Local Docker Compose | Value of `ADMIN_EMAIL` in `.env` | Value of `ADMIN_PASSWORD` in `.env` |
+
+The administrator password is deliberately not committed to this README. Share it with authorized client reviewers through a private channel or password manager, then rotate it after the prototype review.
+
 | Role | Name | Email | Specialty |
 | --- | --- | --- | --- |
 | Doctor | Maria Santos | `maria.santos.doctor@example.com` | General Medicine |
@@ -24,7 +33,7 @@ All seeded doctor and staff accounts use the password `ChangeMe123!`.
 | Staff | Angela Flores | `angela.flores.staff@example.com` | Not applicable |
 | Staff | Paolo Navarro | `paolo.navarro.staff@example.com` | Not applicable |
 
-The administrator account uses the `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` values configured in the local `.env` file. Patient accounts are created from the registration page.
+The administrator account is created from the configured `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` values. Patient accounts are created from the registration page.
 
 The backend startup process creates the administrator, five doctors, two staff accounts, five specialties, and five services. The seed scripts are idempotent, so existing records are not duplicated and user-changed passwords are not overwritten.
 

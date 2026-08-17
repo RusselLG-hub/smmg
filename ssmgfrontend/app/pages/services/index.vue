@@ -36,7 +36,7 @@ onMounted(async () => {
         class="card card-hover !p-0 overflow-hidden flex flex-col"
       >
         <div class="h-44 w-full bg-gray-100 overflow-hidden relative">
-          <img :src="srv.image_url || '/images/default-service.svg'" :alt="srv.name" class="h-full w-full object-cover" @error="($event.target as HTMLImageElement).src = '/images/default-service.svg'" />
+          <img :src="srv.image_url || '/images/public-service-fallback.svg'" :alt="srv.name" class="h-full w-full object-cover" @error="($event.target as HTMLImageElement).src = '/images/public-service-fallback.svg'" />
         </div>
 
         <div class="p-6 flex-1 flex flex-col">

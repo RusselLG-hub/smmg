@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title">
+  <title id="title">Doctor profile placeholder</title>
+  <defs>
+    <linearGradient id="bg" x1="20" y1="18" x2="218" y2="225" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eff6ff"/>
+      <stop offset="1" stop-color="#ccfbf1"/>
+    </linearGradient>
+    <linearGradient id="coat" x1="68" y1="149" x2="169" y2="231" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e0f2fe"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="56" fill="url(#bg)"/>
+  <circle cx="120" cy="91" r="42" fill="#f8fafc"/>
+  <path d="M82 84c3-27 18-43 39-43 23 0 38 17 40 45-12-7-25-11-40-11-14 0-27 3-39 9Z" fill="#334155"/>
+  <path d="M46 226c5-50 34-79 74-79s69 29 74 79H46Z" fill="url(#coat)"/>
+  <path d="m92 151 28 35 28-35M120 186v40" fill="none" stroke="#0f766e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M87 161c-12 5-18 16-18 31 0 11 6 20 16 24M153 161c12 5 18 16 18 31 0 11-6 20-16 24" fill="none" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="84" cy="216" r="7" fill="#0f766e"/>
+  <circle cx="156" cy="216" r="7" fill="#0f766e"/>
+</svg>

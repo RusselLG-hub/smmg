@@ -4,19 +4,20 @@ import { ref, watch } from 'vue'
 const props = withDefaults(defineProps<{
   src?: string | null
   alt: string
+  fallback?: string
 }>(), {
   src: null,
+  fallback: '/images/default-avatar.svg',
 })
 
-const fallback = '/images/default-avatar.svg'
-const imageSrc = ref(props.src || fallback)
+const imageSrc = ref(props.src || props.fallback)
 
 watch(() => props.src, (value) => {
-  imageSrc.value = value || fallback
+  imageSrc.value = value || props.fallback
 })
 
 const useFallback = () => {
-  imageSrc.value = fallback
+  imageSrc.value = props.fallback
 }
 </script>
 

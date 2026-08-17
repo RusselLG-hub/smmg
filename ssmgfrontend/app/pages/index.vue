@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { CalendarCheck, ClipboardCheck, MailCheck, Stethoscope } from '@lucide/vue'
+import { CalendarCheck, ClipboardCheck, Clock3, LayoutDashboard, MailCheck, Search, Stethoscope, UserPlus } from '@lucide/vue'
 import { useAuthStore } from '~/stores/auth'
 import { useDoctorsStore } from '~/stores/doctors'
 import { useClinicServicesStore } from '~/stores/clinicServices'
@@ -27,10 +27,10 @@ const benefits = [
 ]
 
 const steps = [
-  ['Create your account', 'Register a patient account to access appointment tools.'],
-  ['Find a doctor or service', 'Explore the public directory and clinic service catalog.'],
-  ['Choose an available time', 'Open a doctor profile and select from available schedules.'],
-  ['Manage your appointment', 'Review your upcoming visits from your patient dashboard.'],
+  { icon: UserPlus, title: 'Create your account', text: 'Register a patient account to access appointment tools.' },
+  { icon: Search, title: 'Find a doctor or service', text: 'Explore the public directory and clinic service catalog.' },
+  { icon: Clock3, title: 'Choose an available time', text: 'Open a doctor profile and select from available schedules.' },
+  { icon: LayoutDashboard, title: 'Manage your appointment', text: 'Review your upcoming visits from your patient dashboard.' },
 ]
 
 onMounted(async () => {
@@ -87,51 +87,66 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section class="border-b border-gray-200 bg-white py-20 sm:py-24" aria-labelledby="benefits-title">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="max-w-2xl">
-          <p class="text-sm font-bold uppercase tracking-widest text-primary-700">Care, organized</p>
-          <h2 id="benefits-title" class="mt-3 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">The essentials for planning your clinic visit</h2>
+    <section class="relative overflow-hidden border-b border-gray-200 bg-white py-20 sm:py-24" aria-labelledby="benefits-title">
+      <div class="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-teal-100/50 blur-3xl" aria-hidden="true" />
+      <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
+          <div class="max-w-xl">
+            <p class="text-sm font-bold uppercase tracking-widest text-primary-700">Care, organized</p>
+            <h2 id="benefits-title" class="mt-3 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Everything you need for a smoother clinic visit</h2>
+          </div>
+          <p class="max-w-xl text-base leading-7 text-gray-600 lg:justify-self-end lg:text-lg">Less time figuring out what comes next. SSMG keeps discovery, scheduling, and appointment updates together in one clear experience.</p>
         </div>
-        <div class="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          <article v-for="benefit in benefits" :key="benefit.title">
-            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-700"><component :is="benefit.icon" class="h-6 w-6" /></span>
-            <h3 class="mt-5 text-lg font-bold text-gray-900">{{ benefit.title }}</h3>
-            <p class="mt-2 text-sm leading-6 text-gray-600">{{ benefit.text }}</p>
+        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <article v-for="(benefit, index) in benefits" :key="benefit.title" class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl">
+            <span class="absolute right-5 top-4 text-5xl font-black text-slate-100 transition-colors group-hover:text-primary-50" aria-hidden="true">0{{ index + 1 }}</span>
+            <span class="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-teal-600 text-white shadow-lg shadow-primary-600/15"><component :is="benefit.icon" class="h-6 w-6" /></span>
+            <h3 class="relative mt-6 text-lg font-bold text-gray-900">{{ benefit.title }}</h3>
+            <p class="relative mt-2 text-sm leading-6 text-gray-600">{{ benefit.text }}</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="py-20 sm:py-24" aria-labelledby="steps-title">
+    <section class="relative overflow-hidden bg-slate-50 py-20 sm:py-24" aria-labelledby="steps-title">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
           <p class="text-sm font-bold uppercase tracking-widest text-teal-700">How it works</p>
           <h2 id="steps-title" class="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">From search to scheduled visit</h2>
+          <p class="mx-auto mt-4 max-w-2xl text-gray-600">A simple, guided path from creating your account to keeping track of your care.</p>
         </div>
-        <ol class="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <li v-for="(step, index) in steps" :key="step[0]" class="relative rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-sm font-bold text-white">{{ index + 1 }}</span>
-            <h3 class="mt-5 font-bold text-gray-900">{{ step[0] }}</h3>
-            <p class="mt-2 text-sm leading-6 text-gray-600">{{ step[1] }}</p>
-          </li>
-        </ol>
+        <div class="relative mt-14">
+          <div class="absolute left-[12.5%] right-[12.5%] top-8 hidden border-t-2 border-dashed border-primary-200 lg:block" aria-hidden="true" />
+          <ol class="relative grid gap-5 md:grid-cols-2 lg:grid-cols-4 lg:gap-7">
+            <li v-for="(step, index) in steps" :key="step.title" class="group relative rounded-2xl border border-slate-200 bg-white px-6 pb-7 pt-8 shadow-sm">
+              <div class="absolute -top-4 right-5 rounded-full bg-slate-900 px-3 py-1 text-xs font-bold tracking-wide text-white">STEP {{ index + 1 }}</div>
+              <span class="relative flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-slate-50 bg-primary-50 text-primary-700 transition-colors group-hover:bg-primary-600 group-hover:text-white"><component :is="step.icon" class="h-7 w-7" /></span>
+              <h3 class="mt-6 text-lg font-bold text-gray-900">{{ step.title }}</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-600">{{ step.text }}</p>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 
     <section class="border-y border-gray-200 bg-white py-20 sm:py-24" aria-labelledby="services-title">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div class="max-w-2xl"><p class="text-sm font-bold uppercase tracking-widest text-primary-700">Clinic services</p><h2 id="services-title" class="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">Explore available care</h2><p class="mt-4 text-gray-600">Browse active services provided through the clinic.</p></div>
+          <div class="max-w-2xl"><p class="text-sm font-bold uppercase tracking-widest text-primary-700">Clinic services</p><h2 id="services-title" class="mt-3 text-3xl font-bold text-gray-900 sm:text-4xl">Care for every stage of life</h2><p class="mt-4 text-lg leading-7 text-gray-600">Explore the clinic's available services and find the right place to start.</p></div>
           <NuxtLink to="/services" class="btn btn-secondary self-start">View all services <LucideArrowRight class="h-4 w-4" /></NuxtLink>
         </div>
         <div v-if="servicesStore.loading" class="mt-10 flex justify-center py-12"><LucideLoader2 class="h-7 w-7 animate-spin text-primary-600" /></div>
-        <div v-else-if="featuredServices.length" class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <article v-for="service in featuredServices" :key="service.id" class="rounded-xl border border-gray-200 bg-gray-50 p-6">
-            <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-teal-700 shadow-sm"><LucideHeartHandshake class="h-5 w-5" /></span>
-            <h3 class="mt-5 font-bold text-gray-900">{{ service.name }}</h3>
-            <p v-if="service.specialty" class="mt-1 text-xs font-semibold uppercase tracking-wide text-primary-700">{{ service.specialty.name }}</p>
-            <p class="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">{{ service.description || 'View this service in the catalog for more information.' }}</p>
+        <div v-else-if="featuredServices.length" class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <article v-for="service in featuredServices" :key="service.id" class="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+            <div class="relative h-40 overflow-hidden bg-gradient-to-br from-primary-100 to-teal-100">
+              <img :src="service.image_url || '/images/public-service-fallback.svg'" :alt="service.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" @error="($event.target as HTMLImageElement).src = '/images/public-service-fallback.svg'" />
+              <span v-if="service.specialty" class="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-primary-700 shadow-sm backdrop-blur">{{ service.specialty.name }}</span>
+            </div>
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-gray-900">{{ service.name }}</h3>
+              <p class="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">{{ service.description || 'View this service in the catalog for more information.' }}</p>
+              <NuxtLink to="/services" class="mt-5 inline-flex items-center gap-1 text-sm font-bold text-primary-700 hover:text-primary-800">Learn more <LucideArrowUpRight class="h-4 w-4" /><span class="sr-only"> about {{ service.name }}</span></NuxtLink>
+            </div>
           </article>
         </div>
         <div v-else class="mt-10 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center"><LucideClipboardList class="mx-auto h-8 w-8 text-gray-400" /><p class="mt-3 font-semibold text-gray-900">No active services are listed yet</p><p class="mt-1 text-sm text-gray-600">Please check the service catalog again later.</p></div>
@@ -149,7 +164,7 @@ onMounted(async () => {
           <article v-for="doctor in featuredDoctors" :key="doctor.id" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center gap-4 p-6">
               <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary-100 bg-primary-50">
-                <BaseAvatar :src="doctor.profile_image_url" :alt="`Portrait of Dr. ${doctor.user.name}`" />
+                <BaseAvatar :src="doctor.profile_image_url" :alt="`Portrait of Dr. ${doctor.user.name}`" fallback="/images/public-doctor-fallback.svg" />
               </div>
               <div class="min-w-0"><h3 class="font-bold text-gray-900">Dr. {{ doctor.user.name }}</h3><p class="mt-1 text-sm font-medium text-teal-700">{{ doctor.specialty?.name || 'General healthcare' }}</p></div>
             </div>

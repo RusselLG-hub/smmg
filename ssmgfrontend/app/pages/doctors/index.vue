@@ -71,7 +71,7 @@ watch(selectedSpecialty, async (newVal) => {
         <div class="p-6 flex-1 flex flex-col">
           <div class="flex items-start gap-4 mb-4">
             <div class="h-16 w-16 rounded-full overflow-hidden bg-primary-50 border border-primary-200 flex items-center justify-center shrink-0">
-              <BaseAvatar :src="doc.profile_image_url" :alt="`Dr. ${doc.user.name}`" />
+              <BaseAvatar :src="doc.profile_image_url" :alt="`Dr. ${doc.user.name}`" fallback="/images/public-doctor-fallback.svg" />
             </div>
 
             <div>
