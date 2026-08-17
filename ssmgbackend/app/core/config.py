@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ssmg"
+    DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/ssmg"
 
     # JWT
     JWT_SECRET: str = ""
