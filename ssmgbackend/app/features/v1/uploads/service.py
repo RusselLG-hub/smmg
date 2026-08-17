@@ -1,5 +1,6 @@
 from fastapi import UploadFile
 
+from app.core.config import settings
 from app.core.exceptions import BadRequestException
 from app.features.v1.uploads.schema import UploadResponse
 from app.helpers.ulid import generate_ulid
@@ -33,9 +34,6 @@ async def upload_image(file: UploadFile) -> UploadResponse:
         content_type=file.content_type,
     )
 
-    try:
-        url = minio_provider.get_presigned_url(stored_name, expires_hours=24)
-    except Exception:
-        url = f"/v1/uploads/{stored_name}"
+    url = f"{settings.API_PUBLIC_URL.rstrip('/')}/v1/uploads/{stored_name}"
 
     return UploadResponse(object_name=stored_name, url=url)

@@ -16,6 +16,8 @@ const profileImageUrl = useState<string | null>('patient-profile-image-url', () 
 const inputMessage = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
 const sidebarOpen = ref(false)
+const pendingDeleteId = ref<string | null>(null)
+const deletingChat = ref(false)
 const hasActiveChat = computed(() => Boolean(aiStore.activeSessionId && aiStore.activeSession))
 
 onMounted(async () => {
@@ -61,11 +63,19 @@ const handleCreateNewChat = async () => {
   sidebarOpen.value = false
 }
 
-const handleDeleteChat = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this chat session?')) return
-  await aiStore.deleteSession(id)
-  if (!aiStore.activeSessionId) {
-    inputMessage.value = ''
+const requestDeleteChat = (id: string) => {
+  pendingDeleteId.value = id
+}
+
+const handleDeleteChat = async () => {
+  if (!pendingDeleteId.value) return
+  deletingChat.value = true
+  try {
+    await aiStore.deleteSession(pendingDeleteId.value)
+    pendingDeleteId.value = null
+    if (!aiStore.activeSessionId) inputMessage.value = ''
+  } finally {
+    deletingChat.value = false
   }
 }
 
@@ -147,7 +157,7 @@ const formatMessageContent = (content: string) => {
             <button
               class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 p-1 rounded transition-opacity"
               title="Delete session"
-              @click.stop="handleDeleteChat(s.id)"
+              @click.stop="requestDeleteChat(s.id)"
             >
               <LucideTrash2 class="h-3.5 w-3.5" />
             </button>
@@ -182,7 +192,7 @@ const formatMessageContent = (content: string) => {
           <button
             v-if="aiStore.activeSessionId"
             class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1"
-            @click="handleDeleteChat(aiStore.activeSessionId)"
+            @click="requestDeleteChat(aiStore.activeSessionId)"
           >
             <LucideTrash2 class="h-3.5 w-3.5" />
             <span>Delete Chat</span>
@@ -308,5 +318,15 @@ const formatMessageContent = (content: string) => {
         </div>
       </main>
     </div>
+
+    <BaseConfirmModal
+      :model-value="Boolean(pendingDeleteId)"
+      title="Delete chat session?"
+      description="This conversation and its message history will be permanently removed."
+      confirm-label="Delete Chat"
+      :loading="deletingChat"
+      @update:model-value="!$event && (pendingDeleteId = null)"
+      @confirm="handleDeleteChat"
+    />
   </div>
 </template>

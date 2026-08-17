@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { useDoctorsStore } from '~/stores/doctors'
 import { useSpecialtiesStore } from '~/stores/specialties'
 import { useClinicServicesStore } from '~/stores/clinicServices'
@@ -33,6 +33,18 @@ const showServiceModal = ref(false)
 const actionError = ref<string | null>(null)
 const actionSuccess = ref<string | null>(null)
 const uploadingImage = ref(false)
+type DeleteTarget = { type: 'doctor' | 'specialty' | 'service'; id: string }
+const pendingDelete = ref<DeleteTarget | null>(null)
+const deletingRecord = ref(false)
+
+const deleteModalCopy = computed(() => {
+  const labels = {
+    doctor: ['Delete doctor account?', 'The doctor account and associated profile will be permanently removed.', 'Delete Doctor'],
+    specialty: ['Delete specialty?', 'This specialty will be permanently removed from the clinic catalog.', 'Delete Specialty'],
+    service: ['Delete clinic service?', 'This service will be permanently removed from the public catalog.', 'Delete Service'],
+  } as const
+  return labels[pendingDelete.value?.type || 'service']
+})
 
 // Forms
 const doctorForm = reactive({
@@ -126,14 +138,8 @@ const handleCreateDoctor = async () => {
   }
 }
 
-const handleDeleteDoctor = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this doctor account?')) return
-  try {
-    await doctorsStore.deleteDoctor(id)
-    actionSuccess.value = 'Doctor deleted successfully'
-  } catch (err: any) {
-    actionError.value = err?.data?.detail || 'Failed to delete doctor'
-  }
+const handleDeleteDoctor = (id: string) => {
+  pendingDelete.value = { type: 'doctor', id }
 }
 
 const handleCreateStaff = async () => {
@@ -188,14 +194,8 @@ const handleCreateSpecialty = async () => {
   }
 }
 
-const handleDeleteSpecialty = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this specialty?')) return
-  try {
-    await specialtiesStore.deleteSpecialty(id)
-    actionSuccess.value = 'Specialty deleted successfully'
-  } catch (err: any) {
-    actionError.value = err?.data?.detail || 'Failed to delete specialty'
-  }
+const handleDeleteSpecialty = (id: string) => {
+  pendingDelete.value = { type: 'specialty', id }
 }
 
 // Service Actions
@@ -254,13 +254,32 @@ const handleCreateService = async () => {
   }
 }
 
-const handleDeleteService = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this service?')) return
+const handleDeleteService = (id: string) => {
+  pendingDelete.value = { type: 'service', id }
+}
+
+const confirmDelete = async () => {
+  const target = pendingDelete.value
+  if (!target) return
+  actionError.value = null
+  actionSuccess.value = null
+  deletingRecord.value = true
   try {
-    await clinicServicesStore.deleteService(id)
-    actionSuccess.value = 'Clinic service deleted successfully'
+    if (target.type === 'doctor') {
+      await doctorsStore.deleteDoctor(target.id)
+      actionSuccess.value = 'Doctor deleted successfully'
+    } else if (target.type === 'specialty') {
+      await specialtiesStore.deleteSpecialty(target.id)
+      actionSuccess.value = 'Specialty deleted successfully'
+    } else {
+      await clinicServicesStore.deleteService(target.id)
+      actionSuccess.value = 'Clinic service deleted successfully'
+    }
+    pendingDelete.value = null
   } catch (err: any) {
-    actionError.value = err?.data?.detail || 'Failed to delete service'
+    actionError.value = err?.data?.detail || `Failed to delete ${target.type}`
+  } finally {
+    deletingRecord.value = false
   }
 }
 </script>
@@ -734,5 +753,15 @@ const handleDeleteService = async (id: string) => {
         </form>
       </div>
     </div>
+
+    <BaseConfirmModal
+      :model-value="Boolean(pendingDelete)"
+      :title="deleteModalCopy[0]"
+      :description="deleteModalCopy[1]"
+      :confirm-label="deleteModalCopy[2]"
+      :loading="deletingRecord"
+      @update:model-value="!$event && (pendingDelete = null)"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>

@@ -16,7 +16,7 @@ minio_public_client = Minio(
     endpoint=settings.MINIO_PUBLIC_ENDPOINT,
     access_key=settings.MINIO_ACCESS_KEY,
     secret_key=settings.MINIO_SECRET_KEY,
-    secure=settings.MINIO_SECURE,
+    secure=settings.MINIO_PUBLIC_SECURE,
 )
 
 

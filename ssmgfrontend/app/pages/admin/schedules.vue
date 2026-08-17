@@ -15,6 +15,8 @@ const selectedDoctorId = ref<string>('')
 const actionSuccess = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const showAddModal = ref(false)
+const pendingDeleteId = ref<string | null>(null)
+const deletingSchedule = ref(false)
 
 const form = reactive({
   day_of_week: 0,
@@ -61,15 +63,19 @@ const handleCreateSchedule = async () => {
   }
 }
 
-const handleDeleteSchedule = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this schedule?')) return
+const handleDeleteSchedule = async () => {
+  if (!pendingDeleteId.value) return
   actionError.value = null
   actionSuccess.value = null
+  deletingSchedule.value = true
   try {
-    await schedulesStore.deleteSchedule(id)
+    await schedulesStore.deleteSchedule(pendingDeleteId.value)
     actionSuccess.value = 'Schedule deleted'
+    pendingDeleteId.value = null
   } catch (err: any) {
     actionError.value = err?.data?.detail || 'Failed to delete schedule'
+  } finally {
+    deletingSchedule.value = false
   }
 }
 
@@ -205,7 +211,7 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
                 </button>
               </td>
               <td class="px-4 py-3 text-right">
-                <button class="text-red-600 hover:text-red-800 text-xs font-medium" @click="handleDeleteSchedule(s.id)">
+                <button class="text-red-600 hover:text-red-800 text-xs font-medium" @click="pendingDeleteId = s.id">
                   Delete
                 </button>
               </td>
@@ -263,5 +269,15 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
         </form>
       </div>
     </div>
+
+    <BaseConfirmModal
+      :model-value="Boolean(pendingDeleteId)"
+      title="Delete working schedule?"
+      description="Appointments can no longer be booked during this recurring schedule."
+      confirm-label="Delete Schedule"
+      :loading="deletingSchedule"
+      @update:model-value="!$event && (pendingDeleteId = null)"
+      @confirm="handleDeleteSchedule"
+    />
   </div>
 </template>

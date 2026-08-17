@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # MinIO
     MINIO_ENDPOINT: str = "localhost:9000"
     MINIO_PUBLIC_ENDPOINT: str = "localhost:9000"
+    MINIO_PUBLIC_SECURE: bool = False
     MINIO_ACCESS_KEY: str = ""
     MINIO_SECRET_KEY: str = ""
     MINIO_BUCKET: str = "ssmg"
@@ -50,6 +51,7 @@ class Settings(BaseSettings):
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:3000"
+    API_PUBLIC_URL: str = "http://localhost:8000"
 
     @property
     def cors_origins(self) -> list[str]:
