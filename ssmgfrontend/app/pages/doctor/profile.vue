@@ -67,11 +67,15 @@ const handleImageUpload = async (event: Event) => {
 
   const file = target.files[0]
   uploading.value = true
+  successMsg.value = null
   errorMsg.value = null
   try {
     const res = await uploadService.uploadImage(file)
-    form.profile_image_url = res.url
-    profileImageUrl.value = res.url
+    const updated = await doctorsService.updateMyProfile({ profile_image_url: res.url })
+    doctorProfile.value = updated
+    form.profile_image_url = updated.profile_image_url || res.url
+    profileImageUrl.value = form.profile_image_url
+    successMsg.value = 'Profile photo uploaded and saved.'
   } catch (err: any) {
     errorMsg.value = err?.data?.detail || 'Failed to upload profile photo'
   } finally {

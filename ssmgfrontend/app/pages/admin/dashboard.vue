@@ -100,25 +100,16 @@ const handleToggleUserActive = async (userId: string) => {
 
 <template>
   <div class="page-container space-y-8">
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="h-1.5 bg-gradient-to-r from-primary-600 to-teal-500" />
-      <div class="flex flex-col items-start justify-between gap-6 px-6 py-7 sm:flex-row sm:items-center sm:px-8">
-        <div class="flex items-start gap-4">
-          <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 sm:flex">
-            <LucideLayoutDashboard class="h-6 w-6" />
-          </div>
-          <div>
-            <p class="section-label">System administration</p>
-            <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Administration Dashboard</h1>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Monitor clinic operations, account activity, appointment volume, and configuration from one workspace.</p>
-          </div>
-        </div>
-
-        <NuxtLink to="/admin" class="btn btn-primary shrink-0">
-          <LucideSettings class="h-4 w-4" />
-          <span>Manage Clinic</span>
-        </NuxtLink>
+    <section class="flex flex-col items-start justify-between gap-5 rounded-2xl bg-gradient-to-r from-blue-900 to-teal-800 p-5 text-white shadow-lg sm:p-8 md:flex-row md:items-center">
+      <div class="min-w-0">
+        <span class="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur-sm">System administration</span>
+        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Administration Dashboard</h1>
+        <p class="mt-1 max-w-2xl text-sm text-blue-100">Monitor clinic operations, account activity, appointment volume, and configuration from one workspace.</p>
       </div>
+      <NuxtLink to="/admin" class="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow transition-colors hover:bg-blue-50 md:w-auto">
+        <LucideSettings class="h-4 w-4 text-blue-700" />
+        <span>Manage Clinic</span>
+      </NuxtLink>
     </section>
 
     <!-- Alert Notifications -->
@@ -171,23 +162,27 @@ const handleToggleUserActive = async (userId: string) => {
         <div class="space-y-3">
           <div><h2 class="text-base font-bold text-slate-950">Accounts overview</h2><p class="mt-1 text-sm text-slate-500">Current registered users by operational role.</p></div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="card border-l-4 border-l-primary-600 p-5">
+            <div class="card relative overflow-hidden p-5">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total users</div>
               <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_users || 0 }}</div>
             </div>
 
-            <div class="card border-l-4 border-l-primary-600 p-5">
+            <div class="card relative overflow-hidden p-5">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Patients</div>
               <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_patients || 0 }}</div>
             </div>
 
-            <div class="card border-l-4 border-l-primary-600 p-5">
+            <div class="card relative overflow-hidden p-5">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Doctors</div>
               <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_doctors || 0 }}</div>
               <p class="mt-1 text-xs text-slate-500">{{ dashboardStore.adminSummary?.active_doctors_count || 0 }} active</p>
             </div>
 
-            <div class="card border-l-4 border-l-primary-600 p-5">
+            <div class="card relative overflow-hidden p-5">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Staff</div>
               <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_staff || 0 }}</div>
             </div>
@@ -198,27 +193,32 @@ const handleToggleUserActive = async (userId: string) => {
         <div class="space-y-3">
           <div><h2 class="text-base font-bold text-slate-950">Appointment metrics</h2><p class="mt-1 text-sm text-slate-500">Operational totals across the current appointment workflow.</p></div>
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+            <div class="card relative overflow-hidden p-4 text-center">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-medium text-slate-500">Today's Total</div>
               <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.today_appointments_count || 0 }}</div>
             </div>
 
-            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+            <div class="card relative overflow-hidden p-4 text-center">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-medium text-slate-500">Pending</div>
               <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.pending_count || 0 }}</div>
             </div>
 
-            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+            <div class="card relative overflow-hidden p-4 text-center">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-medium text-slate-500">Confirmed</div>
               <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.confirmed_count || 0 }}</div>
             </div>
 
-            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+            <div class="card relative overflow-hidden p-4 text-center">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-medium text-slate-500">Completed</div>
               <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.completed_count || 0 }}</div>
             </div>
 
-            <div class="card col-span-2 border-t-2 border-t-primary-500 p-4 text-center sm:col-span-1">
+            <div class="card relative col-span-2 overflow-hidden p-4 text-center sm:col-span-1">
+              <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-teal-500 opacity-70" />
               <div class="text-xs font-medium text-slate-500">Cancelled</div>
               <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.cancelled_count || 0 }}</div>
             </div>

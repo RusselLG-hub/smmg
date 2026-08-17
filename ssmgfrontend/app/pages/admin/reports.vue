@@ -69,7 +69,7 @@ const exportDoctorCsv = () => {
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
     <!-- Header Banner -->
-    <div class="bg-gradient-to-r from-blue-900 to-teal-800 rounded-2xl p-5 sm:p-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
+    <section class="flex flex-col items-start justify-between gap-5 rounded-2xl bg-gradient-to-r from-blue-900 to-teal-800 p-5 text-white shadow-lg sm:p-8 md:flex-row md:items-center">
       <div class="min-w-0">
         <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 backdrop-blur-sm">
           Operational Analytics & BI
@@ -87,7 +87,7 @@ const exportDoctorCsv = () => {
           <span>Export Doctor Stats CSV</span>
         </button>
       </div>
-    </div>
+    </section>
 
     <!-- Date Filter Controls -->
     <div class="card p-5 space-y-4">

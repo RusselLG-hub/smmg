@@ -31,11 +31,18 @@ const handleImageUpload = async (event: Event) => {
   if (!file) return
 
   uploading.value = true
+  successMsg.value = null
   errorMsg.value = null
   try {
     const response = await uploadService.uploadImage(file)
-    form.profile_image_url = response.url
-    profileImageUrl.value = response.url
+    const user = await authService.updateMe({
+      name: form.name,
+      profile_image_url: response.url,
+    })
+    form.profile_image_url = user.profile_image_url || response.url
+    authStore.user = user
+    profileImageUrl.value = form.profile_image_url
+    successMsg.value = 'Avatar uploaded and saved.'
   } catch (err: any) {
     errorMsg.value = err?.data?.detail || err?.message || 'Failed to upload avatar'
   } finally {
