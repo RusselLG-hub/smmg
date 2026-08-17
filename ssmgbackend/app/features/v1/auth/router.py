@@ -66,13 +66,17 @@ async def login(
 ):
     user, token = await auth_service.login(db, login_data)
 
+    # Remove the legacy API-host-only cookie before issuing the shared
+    # frontend/API domain cookie.
+    response.delete_cookie(key=settings.AUTH_COOKIE_NAME)
     response.set_cookie(
-        key="access_token",
+        key=settings.AUTH_COOKIE_NAME,
         value=token,
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",
-        secure=False,  # Set to True in production HTTPS
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        secure=settings.AUTH_COOKIE_SECURE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
     )
 
     user_read = user_schema.UserRead.model_validate(user)
@@ -84,7 +88,13 @@ async def login(
 
 @router.post("/logout", response_model=auth_schema.MessageResponse)
 async def logout(response: Response):
-    response.delete_cookie(key="access_token", samesite="lax")
+    response.delete_cookie(key=settings.AUTH_COOKIE_NAME)
+    response.delete_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        secure=settings.AUTH_COOKIE_SECURE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
+    )
     return auth_schema.MessageResponse(message="Logged out successfully.")
 
 

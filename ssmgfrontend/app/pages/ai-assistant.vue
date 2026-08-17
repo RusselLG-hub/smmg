@@ -251,13 +251,7 @@ const formatMessageContent = (content: string) => {
                 v-if="msg.role === 'user'"
                 class="h-8 w-8 rounded-full overflow-hidden bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs shrink-0 mt-1 ring-1 ring-primary-200"
               >
-                <img
-                  v-if="profileImageUrl"
-                  :src="profileImageUrl"
-                  :alt="authStore.user?.name || 'User'"
-                  class="h-full w-full object-cover"
-                />
-                <LucideUser v-else class="h-4.5 w-4.5 text-primary-600" />
+                <BaseAvatar :src="profileImageUrl" :alt="authStore.user?.name || 'User'" />
               </div>
             </div>
 

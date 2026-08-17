@@ -149,8 +149,7 @@ onMounted(async () => {
           <article v-for="doctor in featuredDoctors" :key="doctor.id" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center gap-4 p-6">
               <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary-100 bg-primary-50">
-                <img v-if="doctor.profile_image_url" :src="doctor.profile_image_url" :alt="`Portrait of Dr. ${doctor.user.name}`" class="h-full w-full object-cover" loading="lazy" width="64" height="64" />
-                <LucideStethoscope v-else class="h-7 w-7 text-primary-600" />
+                <BaseAvatar :src="doctor.profile_image_url" :alt="`Portrait of Dr. ${doctor.user.name}`" />
               </div>
               <div class="min-w-0"><h3 class="font-bold text-gray-900">Dr. {{ doctor.user.name }}</h3><p class="mt-1 text-sm font-medium text-teal-700">{{ doctor.specialty?.name || 'General healthcare' }}</p></div>
             </div>

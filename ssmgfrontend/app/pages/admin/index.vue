@@ -372,13 +372,7 @@ const confirmDelete = async () => {
             <tr v-for="doc in doctorsStore.doctors" :key="doc.id" class="hover:bg-gray-50">
               <td class="px-4 py-3 font-medium text-gray-900 flex items-center gap-3">
                 <div class="h-9 w-9 rounded-full overflow-hidden bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold shrink-0 ring-1 ring-gray-200">
-                  <img
-                    v-if="doc.profile_image_url"
-                    :src="doc.profile_image_url"
-                    :alt="`${doc.user.name} avatar`"
-                    class="h-full w-full object-cover"
-                  />
-                  <span v-else>{{ doc.user.name.charAt(0).toUpperCase() }}</span>
+                  <BaseAvatar :src="doc.profile_image_url" :alt="`${doc.user.name} avatar`" />
                 </div>
                 <div>
                   <div>Dr. {{ doc.user.name }} <span v-if="doc.title" class="text-xs text-gray-500">({{ doc.title }})</span></div>
@@ -441,8 +435,7 @@ const confirmDelete = async () => {
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
                   <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                    <img v-if="staff.profile_image_url" :src="staff.profile_image_url" :alt="`${staff.name} avatar`" class="h-full w-full object-cover" />
-                    <span v-else>{{ staff.name.charAt(0).toUpperCase() }}</span>
+                    <BaseAvatar :src="staff.profile_image_url" :alt="`${staff.name} avatar`" />
                   </div>
                   <div>
                     <div class="font-semibold text-gray-900">{{ staff.name }}</div>
@@ -540,7 +533,7 @@ const confirmDelete = async () => {
           <tbody class="divide-y divide-gray-100">
             <tr v-for="srv in clinicServicesStore.services" :key="srv.id" class="hover:bg-gray-50">
               <td class="px-4 py-3 font-semibold text-gray-900 flex items-center gap-3">
-                <img v-if="srv.image_url" :src="srv.image_url" class="h-8 w-8 rounded object-cover border border-gray-200" />
+                <img :src="srv.image_url || '/images/default-service.svg'" :alt="`${srv.name} cover`" class="h-8 w-8 rounded object-cover border border-gray-200" @error="($event.target as HTMLImageElement).src = '/images/default-service.svg'" />
                 <span>{{ srv.name }}</span>
               </td>
               <td class="px-4 py-3 text-gray-600">{{ srv.specialty?.name || '-' }}</td>
@@ -690,18 +683,11 @@ const confirmDelete = async () => {
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
               <div class="relative flex aspect-[16/7] items-center justify-center overflow-hidden bg-gradient-to-br from-primary-50 via-white to-teal-50">
                 <img
-                  v-if="serviceForm.image_url"
-                  :src="serviceForm.image_url"
+                  :src="serviceForm.image_url || '/images/default-service.svg'"
                   :alt="`${serviceForm.name || 'Clinic service'} preview`"
                   class="h-full w-full object-cover"
+                  @error="($event.target as HTMLImageElement).src = '/images/default-service.svg'"
                 />
-                <div v-else class="flex flex-col items-center px-6 text-center">
-                  <div class="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary-600 shadow-sm ring-1 ring-primary-100">
-                    <LucideImagePlus class="h-6 w-6" />
-                  </div>
-                  <p class="text-sm font-semibold text-gray-700">Add a service cover image</p>
-                  <p class="mt-1 text-xs text-gray-500">It will appear on the public services page.</p>
-                </div>
 
                 <div v-if="uploadingImage" class="absolute inset-0 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm">
                   <LucideLoader2 class="h-7 w-7 animate-spin text-primary-600" />

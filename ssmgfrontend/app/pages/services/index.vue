@@ -35,8 +35,8 @@ onMounted(async () => {
         :key="srv.id"
         class="card card-hover !p-0 overflow-hidden flex flex-col"
       >
-        <div v-if="srv.image_url" class="h-44 w-full bg-gray-100 overflow-hidden relative">
-          <img :src="srv.image_url" :alt="srv.name" class="h-full w-full object-cover" />
+        <div class="h-44 w-full bg-gray-100 overflow-hidden relative">
+          <img :src="srv.image_url || '/images/default-service.svg'" :alt="srv.name" class="h-full w-full object-cover" @error="($event.target as HTMLImageElement).src = '/images/default-service.svg'" />
         </div>
 
         <div class="p-6 flex-1 flex flex-col">

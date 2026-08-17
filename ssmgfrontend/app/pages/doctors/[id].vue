@@ -127,13 +127,7 @@ const handleConfirmBooking = async () => {
       <div class="card !p-0 overflow-hidden">
         <div class="p-8 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div class="h-24 w-24 rounded-full overflow-hidden bg-primary-50 border-2 border-primary-200 flex items-center justify-center shrink-0">
-            <img
-              v-if="doctorsStore.currentDoctor.profile_image_url"
-              :src="doctorsStore.currentDoctor.profile_image_url"
-              :alt="doctorsStore.currentDoctor.user.name"
-              class="h-full w-full object-cover"
-            />
-            <LucideStethoscope v-else class="h-12 w-12 text-primary-600" />
+            <BaseAvatar :src="doctorsStore.currentDoctor.profile_image_url" :alt="`Dr. ${doctorsStore.currentDoctor.user.name}`" />
           </div>
 
           <div class="space-y-1">

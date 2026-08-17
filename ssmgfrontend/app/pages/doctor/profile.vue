@@ -152,8 +152,7 @@ const handleSave = async () => {
           <!-- Profile Photo / Avatar Upload Section -->
           <div class="flex items-center gap-6 p-4 bg-teal-50/30 rounded-xl border border-teal-100">
             <div class="relative h-24 w-24 rounded-full overflow-hidden bg-primary-50 border-2 border-primary-200 flex items-center justify-center shrink-0 shadow-sm">
-              <img v-if="form.profile_image_url" :src="form.profile_image_url" alt="Doctor Avatar" class="h-full w-full object-cover" />
-              <LucideStethoscope v-else class="h-10 w-10 text-primary-600" />
+              <BaseAvatar :src="form.profile_image_url" :alt="`${form.name || 'Doctor'} avatar`" />
             </div>
 
             <div>

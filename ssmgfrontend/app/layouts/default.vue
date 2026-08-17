@@ -229,13 +229,7 @@ const isActive = (path: string) => {
               aria-label="Open my profile"
             >
               <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100 text-sm font-bold text-primary-700 ring-1 ring-gray-200">
-                <img
-                  v-if="profileImageUrl"
-                  :src="profileImageUrl"
-                  :alt="`${authStore.user?.name || 'User'} avatar`"
-                  class="h-full w-full object-cover"
-                />
-                <span v-else>{{ authStore.user?.name?.charAt(0).toUpperCase() }}</span>
+                <BaseAvatar :src="profileImageUrl" :alt="`${authStore.user?.name || 'User'} avatar`" />
               </div>
               <div class="hidden min-w-0 text-left sm:block">
                 <p class="max-w-40 truncate text-sm font-medium text-gray-900">{{ authStore.user?.name }}</p>

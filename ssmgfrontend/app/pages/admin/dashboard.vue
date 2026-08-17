@@ -100,26 +100,26 @@ const handleToggleUserActive = async (userId: string) => {
 
 <template>
   <div class="page-container space-y-8">
-    <!-- Header Banner -->
-    <div class="dashboard-banner flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-      <div>
-        <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 backdrop-blur-sm">
-          System Administration Hub
-        </span>
-        <h1 class="text-3xl font-bold tracking-tight">Admin Executive Dashboard</h1>
-        <p class="text-gray-300 text-sm mt-1">Full system metrics, clinic domain management, and user account controls</p>
-      </div>
+    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="h-1.5 bg-gradient-to-r from-primary-600 to-teal-500" />
+      <div class="flex flex-col items-start justify-between gap-6 px-6 py-7 sm:flex-row sm:items-center sm:px-8">
+        <div class="flex items-start gap-4">
+          <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 sm:flex">
+            <LucideLayoutDashboard class="h-6 w-6" />
+          </div>
+          <div>
+            <p class="section-label">System administration</p>
+            <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Administration Dashboard</h1>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Monitor clinic operations, account activity, appointment volume, and configuration from one workspace.</p>
+          </div>
+        </div>
 
-      <div class="flex gap-3">
-        <NuxtLink
-          to="/admin"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-900 font-semibold text-sm rounded-xl hover:bg-gray-100 transition-colors shadow"
-        >
-          <LucideShieldCheck class="h-4 w-4 text-indigo-700" />
-          <span>Domain Management</span>
+        <NuxtLink to="/admin" class="btn btn-primary shrink-0">
+          <LucideSettings class="h-4 w-4" />
+          <span>Manage Clinic</span>
         </NuxtLink>
       </div>
-    </div>
+    </section>
 
     <!-- Alert Notifications -->
     <div v-if="actionSuccess" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
@@ -139,10 +139,10 @@ const handleToggleUserActive = async (userId: string) => {
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="border-b border-gray-200 flex gap-4">
+    <div class="inline-flex w-full gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1 sm:w-auto">
       <button
-        class="py-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2"
-        :class="activeTab === 'overview' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+        class="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all sm:flex-none"
+        :class="activeTab === 'overview' ? 'bg-white text-primary-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-950'"
         @click="activeTab = 'overview'"
       >
         <LucideBarChart3 class="h-4 w-4" />
@@ -150,8 +150,8 @@ const handleToggleUserActive = async (userId: string) => {
       </button>
 
       <button
-        class="py-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2"
-        :class="activeTab === 'users' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+        class="flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all sm:flex-none"
+        :class="activeTab === 'users' ? 'bg-white text-primary-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:text-slate-950'"
         @click="activeTab = 'users'"
       >
         <LucideUsers class="h-4 w-4" />
@@ -169,57 +169,58 @@ const handleToggleUserActive = async (userId: string) => {
       <div v-else class="space-y-8">
         <!-- User Counts Grid -->
         <div class="space-y-3">
-          <h2 class="text-base font-bold text-gray-900">User & Account Metrics</h2>
+          <div><h2 class="text-base font-bold text-slate-950">Accounts overview</h2><p class="mt-1 text-sm text-slate-500">Current registered users by operational role.</p></div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="card p-5">
-              <div class="text-xs font-medium text-gray-500">Total System Users</div>
-              <div class="text-3xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.total_users || 0 }}</div>
+            <div class="card border-l-4 border-l-primary-600 p-5">
+              <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total users</div>
+              <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_users || 0 }}</div>
             </div>
 
-            <div class="card p-5">
-              <div class="text-xs font-medium text-gray-500">Registered Patients</div>
-              <div class="text-3xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.total_patients || 0 }}</div>
+            <div class="card border-l-4 border-l-primary-600 p-5">
+              <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Patients</div>
+              <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_patients || 0 }}</div>
             </div>
 
-            <div class="card p-5">
-              <div class="text-xs font-medium text-gray-500">Doctors (Active: {{ dashboardStore.adminSummary?.active_doctors_count }})</div>
-              <div class="text-3xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.total_doctors || 0 }}</div>
+            <div class="card border-l-4 border-l-primary-600 p-5">
+              <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Doctors</div>
+              <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_doctors || 0 }}</div>
+              <p class="mt-1 text-xs text-slate-500">{{ dashboardStore.adminSummary?.active_doctors_count || 0 }} active</p>
             </div>
 
-            <div class="card p-5">
-              <div class="text-xs font-medium text-gray-500">Staff Accounts</div>
-              <div class="text-3xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.total_staff || 0 }}</div>
+            <div class="card border-l-4 border-l-primary-600 p-5">
+              <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Staff</div>
+              <div class="mt-2 text-3xl font-bold tracking-tight text-slate-950">{{ dashboardStore.adminSummary?.total_staff || 0 }}</div>
             </div>
           </div>
         </div>
 
         <!-- Appointment Status Metrics -->
         <div class="space-y-3">
-          <h2 class="text-base font-bold text-gray-900">Appointment Metrics</h2>
+          <div><h2 class="text-base font-bold text-slate-950">Appointment metrics</h2><p class="mt-1 text-sm text-slate-500">Operational totals across the current appointment workflow.</p></div>
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div class="card p-4 text-center">
-              <div class="text-xs font-medium text-gray-500">Today's Total</div>
-              <div class="text-2xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.today_appointments_count || 0 }}</div>
+            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+              <div class="text-xs font-medium text-slate-500">Today's Total</div>
+              <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.today_appointments_count || 0 }}</div>
             </div>
 
-            <div class="card p-4 text-center bg-amber-50/30 border-amber-200">
-              <div class="text-xs font-medium text-amber-700">Pending</div>
-              <div class="text-2xl font-bold text-amber-800 mt-1">{{ dashboardStore.adminSummary?.pending_count || 0 }}</div>
+            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+              <div class="text-xs font-medium text-slate-500">Pending</div>
+              <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.pending_count || 0 }}</div>
             </div>
 
-            <div class="card p-4 text-center bg-green-50/30 border-green-200">
-              <div class="text-xs font-medium text-green-700">Confirmed</div>
-              <div class="text-2xl font-bold text-green-800 mt-1">{{ dashboardStore.adminSummary?.confirmed_count || 0 }}</div>
+            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+              <div class="text-xs font-medium text-slate-500">Confirmed</div>
+              <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.confirmed_count || 0 }}</div>
             </div>
 
-            <div class="card p-4 text-center bg-blue-50/30 border-blue-200">
-              <div class="text-xs font-medium text-blue-700">Completed</div>
-              <div class="text-2xl font-bold text-blue-800 mt-1">{{ dashboardStore.adminSummary?.completed_count || 0 }}</div>
+            <div class="card border-t-2 border-t-primary-500 p-4 text-center">
+              <div class="text-xs font-medium text-slate-500">Completed</div>
+              <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.completed_count || 0 }}</div>
             </div>
 
-            <div class="card p-4 text-center bg-red-50/30 border-red-200 col-span-2 sm:col-span-1">
-              <div class="text-xs font-medium text-red-700">Cancelled</div>
-              <div class="text-2xl font-bold text-red-800 mt-1">{{ dashboardStore.adminSummary?.cancelled_count || 0 }}</div>
+            <div class="card col-span-2 border-t-2 border-t-primary-500 p-4 text-center sm:col-span-1">
+              <div class="text-xs font-medium text-slate-500">Cancelled</div>
+              <div class="mt-2 text-2xl font-bold text-slate-950">{{ dashboardStore.adminSummary?.cancelled_count || 0 }}</div>
             </div>
           </div>
         </div>
@@ -292,7 +293,7 @@ const handleToggleUserActive = async (userId: string) => {
                 <div class="text-xs text-gray-500 font-medium">Specialties Catalog</div>
                 <div class="text-2xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.total_specialties || 0 }} Specialties</div>
               </div>
-              <div class="h-10 w-10 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center group-hover:bg-teal-600 group-hover:text-white transition-colors">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 transition-colors group-hover:bg-primary-600 group-hover:text-white">
                 <LucideAward class="h-5 w-5" />
               </div>
             </NuxtLink>
@@ -305,7 +306,7 @@ const handleToggleUserActive = async (userId: string) => {
                 <div class="text-xs text-gray-500 font-medium">Clinic Services Catalog</div>
                 <div class="text-2xl font-bold text-gray-900 mt-1">{{ dashboardStore.adminSummary?.total_services || 0 }} Services</div>
               </div>
-              <div class="h-10 w-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 transition-colors group-hover:bg-primary-600 group-hover:text-white">
                 <LucideHeartHandshake class="h-5 w-5" />
               </div>
             </NuxtLink>
@@ -318,7 +319,7 @@ const handleToggleUserActive = async (userId: string) => {
                 <div class="text-xs text-gray-500 font-medium">Doctor Working Hours</div>
                 <div class="text-sm font-bold text-gray-900 mt-2">Manage Schedules &rarr;</div>
               </div>
-              <div class="h-10 w-10 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 transition-colors group-hover:bg-primary-600 group-hover:text-white">
                 <LucideClock class="h-5 w-5" />
               </div>
             </NuxtLink>

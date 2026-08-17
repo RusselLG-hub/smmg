@@ -95,8 +95,7 @@ onMounted(loadSessions)
           >
             <div class="flex items-start gap-3">
               <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100 text-xs font-bold text-primary-700">
-                <img v-if="session.user.profile_image_url" :src="session.user.profile_image_url" :alt="`${session.user.name} avatar`" class="h-full w-full object-cover" />
-                <span v-else>{{ session.user.name.charAt(0).toUpperCase() }}</span>
+                <BaseAvatar :src="session.user.profile_image_url" :alt="`${session.user.name} avatar`" />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-semibold text-gray-900">{{ session.title || 'Untitled conversation' }}</p>

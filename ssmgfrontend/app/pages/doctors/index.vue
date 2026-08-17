@@ -71,8 +71,7 @@ watch(selectedSpecialty, async (newVal) => {
         <div class="p-6 flex-1 flex flex-col">
           <div class="flex items-start gap-4 mb-4">
             <div class="h-16 w-16 rounded-full overflow-hidden bg-primary-50 border border-primary-200 flex items-center justify-center shrink-0">
-              <img v-if="doc.profile_image_url" :src="doc.profile_image_url" :alt="doc.user.name" class="h-full w-full object-cover" />
-              <LucideStethoscope v-else class="h-8 w-8 text-primary-600" />
+              <BaseAvatar :src="doc.profile_image_url" :alt="`Dr. ${doc.user.name}`" />
             </div>
 
             <div>

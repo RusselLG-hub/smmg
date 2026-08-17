@@ -3,6 +3,7 @@ from collections.abc import Callable
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import ForbiddenException, UnauthorizedException
 from app.core.security import decode_access_token
 from app.db.session import get_db
@@ -13,7 +14,7 @@ from app.features.v1.users import repository as user_repository
 async def get_current_user(
     request: Request, db: AsyncSession = Depends(get_db)
 ) -> user_model.User:
-    token = request.cookies.get("access_token")
+    token = request.cookies.get(settings.AUTH_COOKIE_NAME)
 
     if not token:
         auth_header = request.headers.get("Authorization")

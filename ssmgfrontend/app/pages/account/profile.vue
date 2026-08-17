@@ -35,6 +35,7 @@ const handleImageUpload = async (event: Event) => {
   try {
     const response = await uploadService.uploadImage(file)
     form.profile_image_url = response.url
+    profileImageUrl.value = response.url
   } catch (err: any) {
     errorMsg.value = err?.data?.detail || err?.message || 'Failed to upload avatar'
   } finally {
@@ -85,8 +86,7 @@ const handleSave = async () => {
       <form class="space-y-5" @submit.prevent="handleSave">
         <div class="flex items-center gap-5 rounded-xl border border-primary-100 bg-primary-50/40 p-4">
           <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary-200 bg-white text-xl font-bold text-primary-700">
-            <img v-if="form.profile_image_url" :src="form.profile_image_url" :alt="`${form.name || 'Staff'} avatar`" class="h-full w-full object-cover" />
-            <span v-else>{{ (form.name || 'S').charAt(0).toUpperCase() }}</span>
+            <BaseAvatar :src="form.profile_image_url" :alt="`${form.name || 'Staff'} avatar`" />
           </div>
           <div>
             <label class="mb-2 block text-sm font-semibold text-gray-900">Profile Avatar</label>

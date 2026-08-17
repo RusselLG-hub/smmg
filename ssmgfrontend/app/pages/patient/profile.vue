@@ -60,6 +60,7 @@ const handleImageUpload = async (event: Event) => {
   try {
     const res = await uploadService.uploadImage(file)
     form.profile_image_url = res.url
+    profileImageUrl.value = res.url
   } catch (err: any) {
     errorMsg.value = err?.data?.detail || 'Failed to upload image'
   } finally {
@@ -136,8 +137,7 @@ const handleSave = async () => {
           <!-- Profile Picture Section -->
           <div class="flex items-center gap-6">
             <div class="relative h-20 w-20 rounded-full overflow-hidden bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
-              <img v-if="form.profile_image_url" :src="form.profile_image_url" alt="Profile" class="h-full w-full object-cover" />
-              <LucideUser v-else class="h-10 w-10 text-gray-400" />
+              <BaseAvatar :src="form.profile_image_url" :alt="`${form.name || 'Patient'} avatar`" />
             </div>
 
             <div>
