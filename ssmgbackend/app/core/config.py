@@ -52,20 +52,6 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
 
     @property
-    def database_url(self) -> str:
-        if Path("/.dockerenv").exists():
-            # PostgreSQL runs in a separate container and is reachable through
-            # the shared service name, not through the backend's localhost.
-            return self.DATABASE_URL.replace("@localhost:", "@postgres:", 1)
-        return self.DATABASE_URL.replace("@postgres:", "@localhost:", 1)
-
-    @property
-    def minio_endpoint(self) -> str:
-        if Path("/.dockerenv").exists():
-            return self.MINIO_ENDPOINT
-        return self.MINIO_ENDPOINT.replace("minio:", "localhost:", 1)
-
-    @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
