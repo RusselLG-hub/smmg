@@ -54,7 +54,9 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         if Path("/.dockerenv").exists():
-            return self.DATABASE_URL
+            # PostgreSQL runs in a separate container and is reachable through
+            # the shared service name, not through the backend's localhost.
+            return self.DATABASE_URL.replace("@localhost:", "@postgres:", 1)
         return self.DATABASE_URL.replace("@postgres:", "@localhost:", 1)
 
     @property
