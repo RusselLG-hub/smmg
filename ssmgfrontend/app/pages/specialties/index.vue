@@ -10,7 +10,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="page-container">
     <BasePageHeader
       title="Medical Specialties"
       description="Explore available healthcare departments and fields"

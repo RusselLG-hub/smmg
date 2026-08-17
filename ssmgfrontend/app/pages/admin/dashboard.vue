@@ -99,9 +99,9 @@ const handleToggleUserActive = async (userId: string) => {
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+  <div class="page-container space-y-8">
     <!-- Header Banner -->
-    <div class="bg-gradient-to-r from-gray-900 to-indigo-900 rounded-2xl p-8 text-white shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="dashboard-banner flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
       <div>
         <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 backdrop-blur-sm">
           System Administration Hub

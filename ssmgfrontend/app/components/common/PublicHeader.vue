@@ -20,12 +20,12 @@ watch(() => route.path, () => {
 <template>
   <header
     class="z-50 w-full"
-    :class="isHome ? 'absolute inset-x-0 top-0 border-b border-white/20 bg-slate-950/25 text-white backdrop-blur-sm' : 'sticky top-0 border-b border-gray-200 bg-white text-gray-900 shadow-sm'"
+    :class="isHome ? 'absolute inset-x-0 top-0 border-b border-white/20 bg-slate-950/30 text-white backdrop-blur-md' : 'sticky top-0 border-b border-slate-200/80 bg-white/90 text-slate-950 shadow-sm backdrop-blur-xl'"
   >
-    <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-24 lg:px-8">
       <NuxtLink to="/" class="flex items-center gap-2.5 rounded-lg font-bold tracking-tight focus-visible:ring-offset-4" aria-label="SSMG Healthcare home">
-        <img src="/images/ssmg-logo.webp" alt="" width="40" height="40" class="h-10 w-10 rounded-full object-cover shadow-sm ring-1 ring-white/30" />
-        <span class="text-lg sm:text-xl">SSMG <span class="font-medium">Healthcare</span></span>
+        <img src="/images/ssmg-logo.webp" alt="" width="44" height="44" class="h-11 w-11 rounded-2xl object-cover shadow-md ring-1 ring-white/30" />
+        <span><span class="block text-lg font-extrabold leading-5 sm:text-xl">SSMG</span><span class="block text-[10px] font-bold uppercase tracking-[0.18em] opacity-75">Healthcare</span></span>
       </NuxtLink>
 
       <nav class="hidden items-center gap-7 lg:flex" aria-label="Public navigation">
@@ -33,8 +33,8 @@ watch(() => route.path, () => {
           v-for="item in navigation"
           :key="item.to"
           :to="item.to"
-          class="rounded text-sm font-medium transition-colors"
-          :class="isHome ? 'text-white/90 hover:text-white' : 'text-gray-600 hover:text-primary-700'"
+          class="rounded-xl px-3 py-2 text-sm font-semibold transition-colors"
+          :class="route.path === item.to ? (isHome ? 'bg-white/15 text-white' : 'bg-primary-50 text-primary-700') : (isHome ? 'text-white/90 hover:bg-white/10 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-primary-700')"
         >
           {{ item.label }}
         </NuxtLink>

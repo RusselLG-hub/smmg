@@ -64,17 +64,20 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl px-4 py-10">
-    <section class="card p-6 sm:p-8">
-      <div class="flex items-center gap-3 border-b border-gray-200 pb-6 mb-6">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 text-primary-700">
-          <LucideUserRound class="h-5 w-5" />
+  <div class="profile-page">
+    <section class="profile-panel">
+      <div class="profile-heading flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
+          <LucideUserRound class="h-6 w-6" />
         </div>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">My Profile</h1>
-          <p class="text-sm text-gray-600">Manage your account details and security.</p>
+        <div class="relative">
+          <p class="section-label">Account settings</p>
+          <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">My Profile</h1>
+          <p class="mt-1 text-sm text-slate-600">Manage your identity, avatar, and account details.</p>
         </div>
       </div>
+
+      <div class="profile-body">
 
       <div v-if="successMsg" class="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ successMsg }}</div>
       <div v-if="errorMsg" class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMsg }}</div>
@@ -113,6 +116,7 @@ const handleSave = async () => {
           </button>
         </div>
       </form>
+      </div>
     </section>
 
     <FeaturesProfileChangePasswordCard v-if="authStore.user" class="mt-6" :email="authStore.user.email" />

@@ -1,10 +1,10 @@
 <template>
-  <footer class="border-t border-gray-200 bg-white">
+  <footer class="border-t border-slate-200 bg-gradient-to-b from-white to-slate-50">
     <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div class="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
+      <div class="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
         <div class="max-w-sm">
           <NuxtLink to="/" class="inline-flex items-center gap-2.5 rounded-lg text-gray-900" aria-label="SSMG Healthcare home">
-            <img src="/images/ssmg-logo.webp" alt="" width="40" height="40" loading="lazy" class="h-10 w-10 rounded-full object-cover shadow-sm ring-1 ring-gray-200" />
+            <img src="/images/ssmg-logo.webp" alt="" width="44" height="44" loading="lazy" class="h-11 w-11 rounded-2xl object-cover shadow-md ring-1 ring-primary-100" />
             <span class="text-xl font-bold">SSMG Healthcare</span>
           </NuxtLink>
           <p class="mt-4 text-sm leading-6 text-gray-600">A simple way to discover doctors, explore clinic services, and manage healthcare appointments online.</p>

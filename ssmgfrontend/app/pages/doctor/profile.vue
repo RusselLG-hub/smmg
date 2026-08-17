@@ -117,17 +117,20 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-10">
-    <div class="card p-6 sm:p-8">
-      <div class="flex items-center gap-3 pb-6 border-b border-gray-200 mb-6">
-        <div class="h-10 w-10 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
-          <LucideStethoscope class="h-5 w-5" />
+  <div class="profile-page">
+    <div class="profile-panel">
+      <div class="profile-heading flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-600/20">
+          <LucideStethoscope class="h-6 w-6" />
         </div>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">Doctor Profile & Avatar</h1>
-          <p class="text-sm text-gray-600">Update your profile photo, credentials, contact information, and biography</p>
+        <div class="relative">
+          <p class="section-label">Professional identity</p>
+          <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Doctor Profile</h1>
+          <p class="mt-1 text-sm text-slate-600">Manage your photo, credentials, specialty, and biography.</p>
         </div>
       </div>
+
+      <div class="profile-body">
 
       <div v-if="loading" class="flex justify-center py-12">
         <LucideLoader2 class="h-8 w-8 text-primary-600 animate-spin" />
@@ -246,6 +249,7 @@ const handleSave = async () => {
           </div>
         </form>
       </template>
+      </div>
     </div>
     <FeaturesProfileChangePasswordCard v-if="authStore.user?.email" class="mt-6" :email="authStore.user.email" />
   </div>
