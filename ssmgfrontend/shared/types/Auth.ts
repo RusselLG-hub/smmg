@@ -21,7 +21,7 @@ export interface ResendVerificationRequest {
 }
 
 export interface ProfileUpdateRequest {
-  name: string
+  name?: string
   profile_image_url?: string | null
 }
 

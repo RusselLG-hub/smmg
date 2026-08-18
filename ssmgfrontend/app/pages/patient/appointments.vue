@@ -243,13 +243,12 @@ const formatTime = (isoStr: string) => {
 
         <!-- Action Buttons for Upcoming Active Appointments -->
         <div v-if="appt.status === 'confirmed' || appt.status === 'pending'" class="pt-3 border-t border-gray-100 flex gap-3">
-          <button
-            type="button"
+          <NuxtLink
+            :to="`/patient/appointments/${appt.id}/reschedule`"
             class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
-            @click="openRescheduleModal(appt)"
           >
             Reschedule
-          </button>
+          </NuxtLink>
           <button
             type="button"
             class="px-3 py-1.5 border border-red-200 bg-red-50 rounded-lg text-xs font-medium text-red-700 hover:bg-red-100"

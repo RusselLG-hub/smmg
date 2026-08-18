@@ -36,7 +36,6 @@ const handleImageUpload = async (event: Event) => {
   try {
     const response = await uploadService.uploadImage(file)
     const user = await authService.updateMe({
-      name: form.name,
       profile_image_url: response.url,
     })
     form.profile_image_url = user.profile_image_url || response.url
@@ -87,25 +86,28 @@ const handleSave = async () => {
 
       <div class="profile-body">
 
-      <div v-if="successMsg" class="mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ successMsg }}</div>
-      <div v-if="errorMsg" class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMsg }}</div>
+      <BaseAlertBanner v-if="successMsg" class="mb-5" type="success" :message="successMsg" @dismiss="successMsg = null" />
+      <BaseAlertBanner v-if="errorMsg" class="mb-5" type="error" :message="errorMsg" @dismiss="errorMsg = null" />
 
       <form class="space-y-5" @submit.prevent="handleSave">
-        <div class="flex items-center gap-5 rounded-xl border border-primary-100 bg-primary-50/40 p-4">
-          <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary-200 bg-white text-xl font-bold text-primary-700">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-teal-600 p-6 text-white shadow-lg sm:flex sm:items-center sm:gap-6">
+          <div class="mb-4 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white/70 bg-white text-xl font-bold text-primary-700 shadow-xl sm:mb-0">
             <BaseAvatar :src="form.profile_image_url" :alt="`${form.name || 'Staff'} avatar`" />
           </div>
-          <div>
-            <label class="mb-2 block text-sm font-semibold text-gray-900">Profile Avatar</label>
-            <label class="btn cursor-pointer border border-primary-300 bg-white px-4 py-2 text-primary-700 shadow-sm hover:bg-primary-50">
+          <div class="relative">
+            <p class="text-lg font-bold">{{ form.name || 'Your profile' }}</p>
+            <p class="mb-3 text-sm text-white/80">{{ authStore.user?.email }}</p>
+            <label class="btn cursor-pointer border border-white/40 bg-white px-4 py-2 text-primary-700 shadow-sm hover:bg-primary-50">
               <LucideLoader2 v-if="uploading" class="h-4 w-4 animate-spin" />
               <LucideUpload v-else class="h-4 w-4" />
               <span>{{ uploading ? 'Uploading...' : 'Upload Avatar' }}</span>
               <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" :disabled="uploading" @change="handleImageUpload" />
             </label>
-            <p class="mt-2 text-xs text-gray-500">JPEG, PNG, WebP or GIF up to 5MB.</p>
+            <p class="mt-2 text-xs text-white/75">JPEG, PNG, WebP or GIF up to 5MB.</p>
           </div>
         </div>
+        <div class="space-y-4 border-t border-gray-100 pt-6">
+          <h2 class="flex items-center gap-2 text-base font-bold text-gray-900"><LucideContact class="h-5 w-5 text-primary-600" /> Account information</h2>
         <div>
           <label class="form-label mb-1" for="account-name">Full Name</label>
           <input id="account-name" v-model.trim="form.name" type="text" autocomplete="name" required maxlength="255" class="form-input w-full" />
@@ -114,6 +116,7 @@ const handleSave = async () => {
           <label class="form-label mb-1" for="account-email">Email Address</label>
           <input id="account-email" :value="authStore.user?.email" type="email" disabled class="form-input w-full bg-gray-50 cursor-not-allowed" />
           <p class="mt-1 text-xs text-gray-500">This is the email used for account verification.</p>
+        </div>
         </div>
         <div class="flex justify-end border-t border-gray-200 pt-4">
           <button type="submit" class="btn btn-primary" :disabled="saving || uploading">

@@ -164,7 +164,9 @@ The repository root must contain `docker-compose.yml`, `ssmgbackend`, and `ssmgf
 cp .env.example .env
 ```
 
-Configure the administrator account, JWT secret, Resend settings, MinIO settings, and external AI provider values in `.env` before starting the system.
+Configure the administrator account, JWT secret, Resend settings, MinIO settings, and external AI provider values in `.env` before starting the system. The values in `.env.example` are placeholders; do not deploy them unchanged.
+
+For a complete client demo, `RESEND_API_KEY` and `EMAIL_FROM` must belong to a verified Resend sender so new users can receive verification codes. `AI_GOOGLE_API_KEY` is required for the AI assistant. The rest of the appointment system can start without those two integrations, but their related features will report that they are unavailable.
 
 ### 4. Build and start SSMG
 
@@ -250,7 +252,7 @@ ssmg/
 - Email verification, appointment notices, and verified self-service password changes
 - Administrator management for doctors, staff, catalog records, schedules, users, and reports
 - AI-powered health and first-aid conversations with administrator monitoring
-- Responsive dashboards, reports, tables, forms, and modal dialogs
+- Responsive dashboards, reports, tables, and full-page forms, with modal dialogs reserved for destructive confirmations
 
 ## Documentation
 

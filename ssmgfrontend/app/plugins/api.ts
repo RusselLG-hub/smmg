@@ -10,6 +10,19 @@ export default defineNuxtPlugin(() => {
       : config.public.apiBaseUrl,
     credentials: 'include',
     headers: requestHeaders,
+    onResponseError({ response }) {
+      const detail = response._data?.detail
+      if (!Array.isArray(detail)) return
+
+      const fields = [...new Set(detail
+        .map(item => item?.loc?.at?.(-1))
+        .filter((field): field is string => typeof field === 'string'))]
+        .map(field => field.replaceAll('_', ' '))
+
+      response._data.detail = fields.length
+        ? `Please check the ${fields.join(', ')} field${fields.length > 1 ? 's' : ''} and try again.`
+        : 'Some information is invalid. Please review the form and try again.'
+    },
   })
 
   return {

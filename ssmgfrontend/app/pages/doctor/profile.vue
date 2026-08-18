@@ -142,36 +142,32 @@ const handleSave = async () => {
 
       <template v-else>
         <!-- Alerts -->
-        <div v-if="successMsg" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-          <LucideCheckCircle2 class="h-5 w-5 text-green-500 shrink-0" />
-          <span>{{ successMsg }}</span>
-        </div>
-
-        <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-          <LucideAlertCircle class="h-5 w-5 text-red-500 shrink-0" />
-          <span>{{ errorMsg }}</span>
-        </div>
+        <BaseAlertBanner v-if="successMsg" class="mb-6" type="success" :message="successMsg" @dismiss="successMsg = null" />
+        <BaseAlertBanner v-if="errorMsg" class="mb-6" type="error" :message="errorMsg" @dismiss="errorMsg = null" />
 
         <form class="space-y-6" @submit.prevent="handleSave">
           <!-- Profile Photo / Avatar Upload Section -->
-          <div class="flex items-center gap-6 p-4 bg-teal-50/30 rounded-xl border border-teal-100">
-            <div class="relative h-24 w-24 rounded-full overflow-hidden bg-primary-50 border-2 border-primary-200 flex items-center justify-center shrink-0 shadow-sm">
+          <div class="rounded-2xl bg-gradient-to-br from-teal-700 via-teal-600 to-primary-700 p-6 text-white shadow-lg sm:flex sm:items-center sm:gap-6">
+            <div class="relative mb-4 h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-white/70 bg-white shadow-xl sm:mb-0">
               <BaseAvatar :src="form.profile_image_url" :alt="`${form.name || 'Doctor'} avatar`" />
             </div>
 
             <div>
-              <label class="block text-sm font-bold text-gray-900 mb-1">Doctor Profile Photo / Avatar</label>
+              <p class="text-xl font-bold">Dr. {{ form.name || 'Doctor profile' }}</p>
+              <p class="mb-3 text-sm text-white/80">{{ form.title || 'Medical professional' }} · {{ form.email }}</p>
               <div class="flex items-center gap-3">
-                <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 border border-primary-300 rounded-lg text-xs font-semibold text-primary-700 bg-white hover:bg-primary-50 shadow-sm transition-colors">
+                <label class="btn btn-secondary cursor-pointer">
                   <LucideUpload class="h-4 w-4" />
                   <span>{{ uploading ? 'Uploading Photo...' : 'Upload Avatar Image' }}</span>
-                  <input type="file" accept="image/*" class="hidden" :disabled="uploading" @change="handleImageUpload" />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" :disabled="uploading" @change="handleImageUpload" />
                 </label>
               </div>
-              <p class="text-xs text-gray-500 mt-1.5">JPEG, PNG, WebP or GIF up to 5MB. Photo appears on doctor directory and appointment cards.</p>
+              <p class="mt-2 text-xs text-white/75">JPEG, PNG, WebP or GIF up to 5MB. Used in the directory and appointment cards.</p>
             </div>
           </div>
 
+          <div class="space-y-4 border-t border-gray-100 pt-6">
+            <h2 class="flex items-center gap-2 text-base font-bold text-gray-900"><LucideBadgeCheck class="h-5 w-5 text-teal-600" /> Professional information</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="form-label mb-1">Doctor Full Name</label>
@@ -179,6 +175,7 @@ const handleSave = async () => {
                 v-model="form.name"
                 type="text"
                 required
+                maxlength="255"
                 class="form-input w-full text-sm"
               />
             </div>
@@ -200,6 +197,7 @@ const handleSave = async () => {
                 v-model="form.title"
                 type="text"
                 placeholder="e.g. MD, FACP, Pediatric Specialist"
+                maxlength="100"
                 class="form-input w-full text-sm"
               />
             </div>
@@ -228,12 +226,14 @@ const handleSave = async () => {
               <p class="mt-1 text-xs text-gray-500">Use 09XXXXXXXXX or +639XXXXXXXXX.</p>
             </div>
           </div>
+          </div>
 
           <div>
             <label class="form-label mb-1">Biography & Medical Background</label>
             <textarea
               v-model="form.bio"
               rows="4"
+              maxlength="1000"
               placeholder="Describe your qualifications, background, and medical care approach..."
               class="form-textarea w-full text-sm"
             ></textarea>

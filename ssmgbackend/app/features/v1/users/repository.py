@@ -75,12 +75,13 @@ async def update_name(db: AsyncSession, user_id: str, name: str) -> User | None:
 async def update_profile(
     db: AsyncSession,
     user_id: str,
-    name: str,
+    name: str | None,
     profile_image_url: str | None,
 ) -> User | None:
     user = await get_by_id(db, user_id)
     if user:
-        user.name = name.strip()
+        if name is not None:
+            user.name = name.strip()
         user.profile_image_url = profile_image_url
         await db.commit()
         await db.refresh(user)

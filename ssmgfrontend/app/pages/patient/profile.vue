@@ -127,36 +127,32 @@ const handleSave = async () => {
 
       <template v-else>
         <!-- Alerts -->
-        <div v-if="successMsg" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-          <LucideCheckCircle2 class="h-5 w-5 text-green-500 shrink-0" />
-          <span>{{ successMsg }}</span>
-        </div>
-
-        <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
-          <LucideAlertCircle class="h-5 w-5 text-red-500 shrink-0" />
-          <span>{{ errorMsg }}</span>
-        </div>
+        <BaseAlertBanner v-if="successMsg" class="mb-6" type="success" :message="successMsg" @dismiss="successMsg = null" />
+        <BaseAlertBanner v-if="errorMsg" class="mb-6" type="error" :message="errorMsg" @dismiss="errorMsg = null" />
 
         <form class="space-y-6" @submit.prevent="handleSave">
           <!-- Profile Picture Section -->
-          <div class="flex items-center gap-6">
-            <div class="relative h-20 w-20 rounded-full overflow-hidden bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
+          <div class="rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-teal-600 p-6 text-white shadow-lg sm:flex sm:items-center sm:gap-6">
+            <div class="relative mb-4 h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-white/70 bg-white shadow-xl sm:mb-0">
               <BaseAvatar :src="form.profile_image_url" :alt="`${form.name || 'Patient'} avatar`" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Profile Photo</label>
+              <p class="text-lg font-bold">{{ form.name || 'Patient profile' }}</p>
+              <p class="mb-3 text-sm text-white/80">{{ profile?.user.email }}</p>
               <div class="flex items-center gap-3">
-                <label class="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors">
+                <label class="btn btn-secondary cursor-pointer">
                   <LucideUpload class="h-3.5 w-3.5" />
                   <span>{{ uploading ? 'Uploading...' : 'Upload Image' }}</span>
-                  <input type="file" accept="image/*" class="hidden" :disabled="uploading" @change="handleImageUpload" />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" :disabled="uploading" @change="handleImageUpload" />
                 </label>
               </div>
-              <p class="text-xs text-gray-500 mt-1">JPEG, PNG, WebP or GIF up to 5MB</p>
+              <p class="mt-2 text-xs text-white/75">JPEG, PNG, WebP or GIF up to 5MB.</p>
             </div>
           </div>
 
+          <div class="space-y-4 border-t border-gray-100 pt-6">
+            <h2 class="flex items-center gap-2 text-base font-bold text-gray-900"><LucideContact class="h-5 w-5 text-primary-600" /> Personal and contact information</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="form-label mb-1">Full Name</label>
@@ -164,6 +160,7 @@ const handleSave = async () => {
                 v-model="form.name"
                 type="text"
                 required
+                maxlength="255"
                 class="form-input w-full text-sm"
               />
             </div>
@@ -220,9 +217,11 @@ const handleSave = async () => {
                 v-model="form.address"
                 type="text"
                 placeholder="123 Health Ave, City"
+                maxlength="255"
                 class="form-input w-full text-sm"
               />
             </div>
+          </div>
           </div>
 
           <div class="pt-4 border-t border-gray-200 flex justify-end">

@@ -50,8 +50,15 @@ const handleInitiateBooking = () => {
     return
   }
   if (!selectedSlot.value) return
-  bookingError.value = null
-  showBookingModal.value = true
+  router.push({
+    path: '/patient/appointments/book',
+    query: {
+      doctor: doctorId,
+      date: selectedDate.value,
+      time: selectedSlot.value,
+      ...(selectedServiceId.value ? { service: selectedServiceId.value } : {}),
+    },
+  })
 }
 
 const handleConfirmBooking = async () => {

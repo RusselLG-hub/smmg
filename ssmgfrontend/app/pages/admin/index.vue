@@ -21,7 +21,13 @@ const clinicServicesStore = useClinicServicesStore()
 const uploadService = useUploadService()
 const usersService = useUsersService()
 
-const activeTab = ref<'doctors' | 'staff' | 'specialties' | 'services'>('doctors')
+const route = useRoute()
+const requestedTab = String(route.query.tab || '')
+const activeTab = ref<'doctors' | 'staff' | 'specialties' | 'services'>(
+  ['doctors', 'staff', 'specialties', 'services'].includes(requestedTab)
+    ? requestedTab as 'doctors' | 'staff' | 'specialties' | 'services'
+    : 'doctors',
+)
 const staffUsers = ref<User[]>([])
 const loadingStaff = ref(false)
 
@@ -29,6 +35,8 @@ const showDoctorModal = ref(false)
 const showStaffModal = ref(false)
 const showSpecialtyModal = ref(false)
 const showServiceModal = ref(false)
+const editingSpecialtyId = ref<string | null>(null)
+const editingServiceId = ref<string | null>(null)
 
 const actionError = ref<string | null>(null)
 const actionSuccess = ref<string | null>(null)
@@ -176,21 +184,43 @@ const handleToggleStaffActive = async (staff: User) => {
 }
 
 // Specialty Actions
+const openCreateSpecialty = () => {
+  editingSpecialtyId.value = null
+  Object.assign(specialtyForm, { name: '', description: '', is_active: true })
+  showSpecialtyModal.value = true
+}
+
+const openEditSpecialty = (specialty: Specialty) => {
+  editingSpecialtyId.value = specialty.id
+  Object.assign(specialtyForm, {
+    name: specialty.name,
+    description: specialty.description || '',
+    is_active: specialty.is_active,
+  })
+  showSpecialtyModal.value = true
+}
+
 const handleCreateSpecialty = async () => {
   actionError.value = null
   actionSuccess.value = null
   try {
-    await specialtiesStore.createSpecialty({
+    const data = {
       name: specialtyForm.name,
       description: specialtyForm.description || null,
       is_active: specialtyForm.is_active,
-    })
-    actionSuccess.value = 'Specialty created successfully'
+    }
+    if (editingSpecialtyId.value) {
+      await specialtiesStore.updateSpecialty(editingSpecialtyId.value, data)
+      actionSuccess.value = 'Specialty updated successfully'
+    } else {
+      await specialtiesStore.createSpecialty(data)
+      actionSuccess.value = 'Specialty created successfully'
+    }
     showSpecialtyModal.value = false
     specialtyForm.name = ''
     specialtyForm.description = ''
   } catch (err: any) {
-    actionError.value = err?.data?.detail || 'Failed to create specialty'
+    actionError.value = err?.data?.detail || `Failed to ${editingSpecialtyId.value ? 'update' : 'create'} specialty`
   }
 }
 
@@ -199,6 +229,30 @@ const handleDeleteSpecialty = (id: string) => {
 }
 
 // Service Actions
+const openCreateService = () => {
+  editingServiceId.value = null
+  Object.assign(serviceForm, {
+    name: '',
+    description: '',
+    specialty_id: '',
+    image_url: '',
+    is_active: true,
+  })
+  showServiceModal.value = true
+}
+
+const openEditService = (service: ClinicService) => {
+  editingServiceId.value = service.id
+  Object.assign(serviceForm, {
+    name: service.name,
+    description: service.description || '',
+    specialty_id: service.specialty_id || '',
+    image_url: service.image_url || '',
+    is_active: service.is_active,
+  })
+  showServiceModal.value = true
+}
+
 const handleServiceImageUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
@@ -236,21 +290,27 @@ const handleCreateService = async () => {
   actionError.value = null
   actionSuccess.value = null
   try {
-    await clinicServicesStore.createService({
+    const data = {
       name: serviceForm.name,
       description: serviceForm.description || null,
       specialty_id: serviceForm.specialty_id || null,
       image_url: serviceForm.image_url || null,
       is_active: serviceForm.is_active,
-    })
-    actionSuccess.value = 'Clinic service created successfully'
+    }
+    if (editingServiceId.value) {
+      await clinicServicesStore.updateService(editingServiceId.value, data)
+      actionSuccess.value = 'Clinic service updated successfully'
+    } else {
+      await clinicServicesStore.createService(data)
+      actionSuccess.value = 'Clinic service created successfully'
+    }
     showServiceModal.value = false
     serviceForm.name = ''
     serviceForm.description = ''
     serviceForm.specialty_id = ''
     serviceForm.image_url = ''
   } catch (err: any) {
-    actionError.value = err?.data?.detail || 'Failed to create service'
+    actionError.value = err?.data?.detail || `Failed to ${editingServiceId.value ? 'update' : 'create'} service`
   }
 }
 
@@ -351,10 +411,10 @@ const confirmDelete = async () => {
     <div v-if="activeTab === 'doctors'" class="space-y-6">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-semibold text-gray-900">Doctor Profiles</h2>
-        <button class="btn btn-primary" @click="showDoctorModal = true">
+        <NuxtLink to="/admin/forms/doctors/new" class="btn btn-primary">
           <LucidePlus class="h-4 w-4" />
           <span>Add Doctor</span>
-        </button>
+        </NuxtLink>
       </div>
 
       <div class="card-table">
@@ -409,10 +469,10 @@ const confirmDelete = async () => {
           <h2 class="text-lg font-semibold text-gray-900">Staff Accounts</h2>
           <p class="text-xs text-gray-500">Create staff accounts and manage their access.</p>
         </div>
-        <button class="btn btn-primary" @click="showStaffModal = true">
+        <NuxtLink to="/admin/forms/staff/new" class="btn btn-primary">
           <LucideUserPlus class="h-4 w-4" />
           <span>Add Staff</span>
-        </button>
+        </NuxtLink>
       </div>
 
       <div v-if="loadingStaff" class="flex justify-center py-12">
@@ -468,13 +528,10 @@ const confirmDelete = async () => {
     <div v-if="activeTab === 'specialties'" class="space-y-6">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-semibold text-gray-900">Medical Specialties</h2>
-        <button
-          class="btn btn-primary"
-          @click="showSpecialtyModal = true"
-        >
+        <NuxtLink to="/admin/forms/specialties/new" class="btn btn-primary">
           <LucidePlus class="h-4 w-4" />
           <span>Add Specialty</span>
-        </button>
+        </NuxtLink>
       </div>
 
       <div class="card-table">
@@ -496,7 +553,10 @@ const confirmDelete = async () => {
                   {{ s.is_active ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-right">
+              <td class="px-4 py-3 text-right space-x-3">
+                <NuxtLink :to="`/admin/forms/specialties/${s.id}`" class="text-primary-600 hover:text-primary-800 text-xs font-medium">
+                  Edit
+                </NuxtLink>
                 <button class="text-red-600 hover:text-red-800 text-xs font-medium" @click="handleDeleteSpecialty(s.id)">
                   Delete
                 </button>
@@ -511,13 +571,10 @@ const confirmDelete = async () => {
     <div v-if="activeTab === 'services'" class="space-y-6">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-semibold text-gray-900">Clinic Services</h2>
-        <button
-          class="btn btn-primary"
-          @click="showServiceModal = true"
-        >
+        <NuxtLink to="/admin/forms/services/new" class="btn btn-primary">
           <LucidePlus class="h-4 w-4" />
           <span>Add Service</span>
-        </button>
+        </NuxtLink>
       </div>
 
       <div class="card-table">
@@ -542,7 +599,10 @@ const confirmDelete = async () => {
                   {{ srv.is_active ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-right">
+              <td class="px-4 py-3 text-right space-x-3">
+                <NuxtLink :to="`/admin/forms/services/${srv.id}`" class="text-primary-600 hover:text-primary-800 text-xs font-medium">
+                  Edit
+                </NuxtLink>
                 <button class="text-red-600 hover:text-red-800 text-xs font-medium" @click="handleDeleteService(srv.id)">
                   Delete
                 </button>
@@ -638,13 +698,18 @@ const confirmDelete = async () => {
     <!-- MODAL: ADD SPECIALTY -->
     <div v-if="showSpecialtyModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Add medical specialty" @click.self="showSpecialtyModal = false">
       <div class="modal-panel max-w-md space-y-4">
-        <h3 class="text-lg font-bold text-gray-900">Add Medical Specialty</h3>
+        <h3 class="text-lg font-bold text-gray-900">{{ editingSpecialtyId ? 'Edit Medical Specialty' : 'Add Medical Specialty' }}</h3>
 
         <form class="space-y-3" @submit.prevent="handleCreateSpecialty">
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1">Specialty Name</label>
             <input v-model="specialtyForm.name" type="text" required placeholder="Cardiology" class="w-full px-3 py-2 border rounded-lg text-sm" />
           </div>
+
+          <label class="flex items-center gap-2 text-xs font-medium text-gray-700">
+            <input v-model="specialtyForm.is_active" type="checkbox" class="h-4 w-4 rounded text-primary-600" />
+            Active specialty
+          </label>
 
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1">Description</label>
@@ -653,7 +718,9 @@ const confirmDelete = async () => {
 
           <div class="modal-actions">
             <button type="button" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800" @click="showSpecialtyModal = false">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">Save Specialty</button>
+            <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">
+              {{ editingSpecialtyId ? 'Update Specialty' : 'Save Specialty' }}
+            </button>
           </div>
         </form>
       </div>
@@ -662,7 +729,7 @@ const confirmDelete = async () => {
     <!-- MODAL: ADD SERVICE -->
     <div v-if="showServiceModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Add clinic service" @click.self="showServiceModal = false">
       <div class="modal-panel max-w-md space-y-4">
-        <h3 class="text-lg font-bold text-gray-900">Add Clinic Service</h3>
+        <h3 class="text-lg font-bold text-gray-900">{{ editingServiceId ? 'Edit Clinic Service' : 'Add Clinic Service' }}</h3>
 
         <form class="space-y-3" @submit.prevent="handleCreateService">
           <div>
@@ -732,9 +799,16 @@ const confirmDelete = async () => {
             <textarea v-model="serviceForm.description" rows="3" placeholder="Service overview..." class="w-full px-3 py-2 border rounded-lg text-sm"></textarea>
           </div>
 
+          <label class="flex items-center gap-2 text-xs font-medium text-gray-700">
+            <input v-model="serviceForm.is_active" type="checkbox" class="h-4 w-4 rounded text-primary-600" />
+            Active service
+          </label>
+
           <div class="modal-actions">
             <button type="button" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800" @click="showServiceModal = false">Cancel</button>
-            <button type="submit" class="btn btn-primary" :disabled="uploadingImage">Save Service</button>
+            <button type="submit" class="btn btn-primary" :disabled="uploadingImage">
+              {{ editingServiceId ? 'Update Service' : 'Save Service' }}
+            </button>
           </div>
         </form>
       </div>

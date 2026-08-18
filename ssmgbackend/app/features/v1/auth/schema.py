@@ -23,7 +23,7 @@ class ResendVerificationRequest(BaseModel):
 
 
 class ProfileUpdateRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
+    name: str | None = Field(None, min_length=1, max_length=255)
     profile_image_url: str | None = Field(None, max_length=500)
 
 

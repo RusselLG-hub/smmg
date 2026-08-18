@@ -28,6 +28,21 @@ export const useSchedulesStore = defineStore('schedules', () => {
     }
   }
 
+  const fetchAllDoctorSchedules = async (doctorIds: string[]) => {
+    loading.value = true
+    error.value = null
+    try {
+      const results = await Promise.all(
+        doctorIds.map(doctorId => schedulesService.getDoctorSchedules(doctorId)),
+      )
+      schedules.value = results.flat()
+    } catch (err: any) {
+      error.value = err?.data?.detail || 'Failed to fetch doctor schedules'
+    } finally {
+      loading.value = false
+    }
+  }
+
   const createSchedule = async (data: DoctorScheduleCreate) => {
     loading.value = true
     error.value = null
@@ -94,6 +109,7 @@ export const useSchedulesStore = defineStore('schedules', () => {
     loading,
     error,
     fetchDoctorSchedules,
+    fetchAllDoctorSchedules,
     createSchedule,
     updateSchedule,
     deleteSchedule,
