@@ -1,12 +1,12 @@
-# SSMG Healthcare Appointment Management System
+# SMMG Healthcare Appointment Management System
 
-SSMG is a role-based healthcare appointment management system with doctor discovery, database-backed specialties and services, schedule management, appointment workflows, notifications, reports, image uploads, and an AI-powered health and first-aid assistant.
+SMMG is a role-based healthcare appointment management system with doctor discovery, database-backed specialties and services, schedule management, appointment workflows, notifications, reports, image uploads, and an AI-powered health and first-aid assistant.
 
 > **Development only:** The accounts and infrastructure credentials below are local demonstration defaults. Replace them before exposing the system publicly, and never commit the generated `.env` file.
 
 ## Local URLs and User Credentials
 
-### SSMG application
+### SMMG application
 
 - **Application:** [http://localhost:3000](http://localhost:3000)
 - **Backend API:** [http://localhost:8000](http://localhost:8000)
@@ -43,31 +43,31 @@ The backend startup process creates the administrator, five doctors, two staff a
 - **S3 API:** [http://localhost:9000](http://localhost:9000)
 - **Username:** `minioadmin`
 - **Password:** `minioadmin`
-- **Application bucket:** `ssmg`
+- **Application bucket:** `smmg`
 
 To inspect uploaded profile and service images:
 
 1. Open [http://localhost:9001](http://localhost:9001).
 2. Sign in with the MinIO credentials above.
 3. Open **Object Browser**.
-4. Select the `ssmg` bucket.
+4. Select the `smmg` bucket.
 
 ### PostgreSQL and pgAdmin
 
-SSMG uses PostgreSQL, so its browser-based database dashboard is **pgAdmin**. phpMyAdmin is not included because it supports MySQL and MariaDB, not PostgreSQL.
+SMMG uses PostgreSQL, so its browser-based database dashboard is **pgAdmin**. phpMyAdmin is not included because it supports MySQL and MariaDB, not PostgreSQL.
 
 Open [http://localhost:5050](http://localhost:5050) and sign in to pgAdmin:
 
 | Setting | Value |
 | --- | --- |
-| Email | `admin@ssmg.example.com` |
+| Email | `admin@smmg.example.com` |
 | Password | `pgadmin` |
 
-After signing in, register the SSMG PostgreSQL server:
+After signing in, register the SMMG PostgreSQL server:
 
 1. Right-click **Servers** in the left sidebar.
 2. Select **Register > Server**.
-3. In **General**, enter `SSMG PostgreSQL` as the server name.
+3. In **General**, enter `SMMG PostgreSQL` as the server name.
 4. In **Connection**, enter the database credentials below.
 5. Enable **Save password**, then select **Save**.
 
@@ -76,7 +76,7 @@ After signing in, register the SSMG PostgreSQL server:
 | Host from pgAdmin in Docker | `postgres` |
 | Host from your computer | `localhost` |
 | Port | `5432` |
-| Maintenance database | `ssmg` |
+| Maintenance database | `smmg` |
 | Username | `postgres` |
 | Password | `postgres` |
 
@@ -85,7 +85,7 @@ Use `postgres`, not `localhost`, in pgAdmin because both containers communicate 
 To open PostgreSQL directly through its container:
 
 ```bash
-docker compose exec postgres psql -U postgres -d ssmg
+docker compose exec postgres psql -U postgres -d smmg
 ```
 
 Useful commands:
@@ -101,7 +101,7 @@ SELECT appointment_reference, scheduled_at, status FROM appointments;
 
 ### 1. Install Docker CLI and Docker Compose
 
-SSMG uses Docker Engine and the Docker Compose CLI plugin. Docker Desktop is not required.
+SMMG uses Docker Engine and the Docker Compose CLI plugin. Docker Desktop is not required.
 
 #### Windows 10 or Windows 11
 
@@ -153,10 +153,10 @@ If `docker info` reports a permission error, run Docker commands with `sudo` or 
 mkdir -p ~/projects
 cd ~/projects
 git clone <repository-url>
-cd ssmg
+cd smmg
 ```
 
-The repository root must contain `docker-compose.yml`, `ssmgbackend`, and `ssmgfrontend`.
+The repository root must contain `docker-compose.yml`, `smmgbackend`, and `smmgfrontend`.
 
 ### 3. Create the environment file
 
@@ -168,7 +168,7 @@ Configure the administrator account, JWT secret, Resend settings, MinIO settings
 
 For a complete client demo, `RESEND_API_KEY` and `EMAIL_FROM` must belong to a verified Resend sender so new users can receive verification codes. `AI_GOOGLE_API_KEY` is required for the AI assistant. The rest of the appointment system can start without those two integrations, but their related features will report that they are unavailable.
 
-### 4. Build and start SSMG
+### 4. Build and start SMMG
 
 ```bash
 docker compose up -d --build
@@ -235,9 +235,9 @@ docker compose down --volumes
 - **Local orchestration:** Docker Compose
 
 ```text
-ssmg/
-├── ssmgbackend/       # FastAPI application, models, providers, and seed scripts
-├── ssmgfrontend/      # Nuxt application, stores, services, and shared types
+smmg/
+├── smmgbackend/       # FastAPI application, models, providers, and seed scripts
+├── smmgfrontend/      # Nuxt application, stores, services, and shared types
 ├── docs/              # System documentation PDF and PNG diagrams
 ├── docker-compose.yml # Local service definitions
 └── .env.example       # Development environment template
@@ -258,8 +258,8 @@ ssmg/
 
 - [System documentation overview](./docs/README.md)
 - [System documentation PDF](./docs/system_documentation.pdf)
-- [System architecture diagram](./docs/diagrams/ssmg-architecture.png)
-- [Entity relationship diagram](./docs/diagrams/ssmg-erd.png)
-- [Role capabilities diagram](./docs/diagrams/ssmg-use-case.png)
-- [Appointment booking sequence](./docs/diagrams/ssmg-sequence.png)
-- [Appointment lifecycle diagram](./docs/diagrams/ssmg-activity.png)
+- [System architecture diagram](./docs/diagrams/smmg-architecture.png)
+- [Entity relationship diagram](./docs/diagrams/smmg-erd.png)
+- [Role capabilities diagram](./docs/diagrams/smmg-use-case.png)
+- [Appointment booking sequence](./docs/diagrams/smmg-sequence.png)
+- [Appointment lifecycle diagram](./docs/diagrams/smmg-activity.png)

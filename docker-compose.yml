@@ -1,7 +1,7 @@
 services:
   frontend:
     build:
-      context: ./ssmgfrontend
+      context: ./smmgfrontend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
@@ -14,14 +14,14 @@ services:
 
   backend:
     build:
-      context: ./ssmgbackend
+      context: ./smmgbackend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/ssmg
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/smmg
     command: >-
       sh -c "alembic upgrade head &&
       python -m app.scripts.seed_admin &&
@@ -47,11 +47,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ssmg
+      POSTGRES_DB: smmg
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ssmg"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d smmg"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -74,7 +74,7 @@ services:
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@ssmg.example.com
+      PGADMIN_DEFAULT_EMAIL: admin@smmg.example.com
       PGADMIN_DEFAULT_PASSWORD: pgadmin
     volumes:
       - pgadmin_data:/var/lib/pgadmin
