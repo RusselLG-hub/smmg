@@ -34,23 +34,23 @@ const maxVolumeCount = computed(() => {
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
     <!-- Header Banner -->
-    <div class="bg-gradient-to-r from-teal-800 to-primary-800 rounded-2xl p-8 text-white shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <section class="dashboard-banner flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
       <div>
-        <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 backdrop-blur-sm">
+        <span class="dashboard-kicker">
           Doctor Analytics
         </span>
-        <h1 class="text-3xl font-bold tracking-tight">Personal Consultation Statistics</h1>
-        <p class="text-teal-100 text-sm mt-1">Dr. {{ authStore.user?.name }} — Track your consultation volume, completion rate, and service usage</p>
+        <h1 class="dashboard-display-title text-3xl font-bold tracking-tight text-slate-950">Personal Consultation Statistics</h1>
+        <p class="mt-1 text-sm text-slate-600">Dr. {{ authStore.user?.name }} — Track your consultation volume, completion rate, and service usage</p>
       </div>
 
       <NuxtLink
         to="/doctor/dashboard"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-white text-teal-800 font-semibold text-xs rounded-xl hover:bg-teal-50 transition-colors shadow"
+        class="dashboard-action-muted"
       >
-        <LucideLayoutDashboard class="h-4 w-4 text-teal-700" />
+        <LucideLayoutDashboard class="h-4 w-4 text-blue-700" />
         <span>Return to Dashboard</span>
       </NuxtLink>
-    </div>
+    </section>
 
     <!-- Date Filter Controls -->
     <div class="card p-5">

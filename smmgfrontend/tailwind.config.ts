@@ -26,7 +26,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        display: ['Newsreader', 'Georgia', 'serif'],
       },
       keyframes: {
         'fade-in': {

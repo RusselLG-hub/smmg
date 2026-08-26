@@ -39,17 +39,17 @@ const formatTime = (isoStr: string) => {
     <!-- Welcome Header Banner -->
     <div class="dashboard-banner flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
       <div>
-        <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 backdrop-blur-sm">
+        <span class="dashboard-kicker">
           Patient Portal
         </span>
         <h1 class="text-3xl font-bold tracking-tight">Welcome back, {{ authStore.user?.name }}!</h1>
-        <p class="text-primary-100 text-sm mt-1">Manage your appointment bookings and healthcare consultations</p>
+        <p class="mt-1 text-sm text-slate-600">Manage your appointment bookings and healthcare consultations</p>
       </div>
 
       <div class="flex gap-3">
         <NuxtLink
           to="/ai-assistant"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-medium text-xs rounded-xl transition-colors backdrop-blur-sm"
+          class="dashboard-action-muted"
         >
           <LucideBot class="h-4 w-4" />
           <span>AI Assistant</span>
@@ -57,9 +57,9 @@ const formatTime = (isoStr: string) => {
 
         <NuxtLink
           to="/doctors"
-          class="inline-flex items-center gap-2 px-5 py-2 bg-white text-primary-700 font-semibold text-xs rounded-xl hover:bg-primary-50 transition-colors shadow"
+          class="dashboard-action-primary"
         >
-          <LucideCalendarPlus class="h-4 w-4 text-primary-600" />
+          <LucideCalendarPlus class="h-4 w-4" />
           <span>Book Consultation</span>
         </NuxtLink>
       </div>

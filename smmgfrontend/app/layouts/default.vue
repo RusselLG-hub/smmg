@@ -144,11 +144,11 @@ const isActive = (path: string) => {
 
       <!-- Sidebar -->
       <aside
-        class="fixed inset-y-0 left-0 z-50 flex w-72 transform flex-col border-r border-slate-200/80 bg-white/95 shadow-xl backdrop-blur-xl transition-transform duration-300 ease-in-out md:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-72 transform flex-col border-r border-blue-100 bg-[#eef6ff] transition-transform duration-300 ease-in-out md:translate-x-0"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       >
         <!-- Sidebar Logo -->
-        <div class="flex h-20 shrink-0 items-center border-b border-slate-200/80 px-6">
+        <div class="flex h-20 shrink-0 items-center border-b border-blue-100 bg-white/70 px-6">
           <NuxtLink to="/" class="flex items-center gap-3 text-slate-950 transition-opacity hover:opacity-90">
             <img src="/images/smmg-logo.webp" alt="" width="42" height="42" class="h-11 w-11 rounded-2xl object-cover shadow-md ring-1 ring-primary-100" />
             <span><span class="block text-lg font-extrabold tracking-tight">SMMG</span><span class="block text-[10px] font-bold uppercase tracking-[0.18em] text-teal-700">Healthcare</span></span>
@@ -163,10 +163,10 @@ const isActive = (path: string) => {
               v-for="link in currentNavLinks"
               :key="link.to"
               :to="link.to"
-              class="group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-all"
-              :class="isActive(link.to) ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold shadow-md shadow-primary-600/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'"
+              class="group relative flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-all"
+              :class="isActive(link.to) ? 'bg-white text-blue-800 font-semibold shadow-sm ring-1 ring-blue-100 before:absolute before:-left-4 before:h-7 before:w-1 before:rounded-r-full before:bg-blue-600' : 'text-slate-600 hover:bg-white/70 hover:text-slate-950'"
             >
-              <component :is="link.icon" class="h-5 w-5 shrink-0" :class="isActive(link.to) ? 'text-white' : 'text-slate-400 group-hover:text-primary-600'" />
+              <component :is="link.icon" class="h-5 w-5 shrink-0" :class="isActive(link.to) ? 'text-blue-700' : 'text-slate-400 group-hover:text-blue-600'" />
               <span>{{ link.name }}</span>
             </NuxtLink>
           </nav>
@@ -190,7 +190,7 @@ const isActive = (path: string) => {
         </div>
 
         <!-- Sidebar footer -->
-        <div class="shrink-0 border-t border-slate-200 bg-slate-50/70 p-4">
+        <div class="shrink-0 border-t border-blue-100 bg-white/60 p-4">
           <button
             type="button"
             class="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
@@ -205,7 +205,7 @@ const isActive = (path: string) => {
       <!-- Main Content Area -->
       <div class="flex min-w-0 flex-1 flex-col md:ml-72">
         <!-- Top Header (Authenticated) -->
-        <header class="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-between border-b border-white/80 bg-white/85 px-4 shadow-sm backdrop-blur-xl sm:px-6 lg:px-8">
+        <header class="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-between border-b border-blue-100 bg-[#f7fafc]/90 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
           <div class="flex items-center">
             <!-- Mobile hamburger -->
             <button

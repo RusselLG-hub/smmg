@@ -69,21 +69,21 @@ const exportDoctorCsv = () => {
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
     <!-- Header Banner -->
-    <section class="flex flex-col items-start justify-between gap-5 rounded-2xl bg-gradient-to-r from-blue-900 to-teal-800 p-5 text-white shadow-lg sm:p-8 md:flex-row md:items-center">
+    <section class="dashboard-banner flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
       <div class="min-w-0">
-        <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 backdrop-blur-sm">
+        <span class="dashboard-kicker">
           Operational Analytics & BI
         </span>
-        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Clinic Reports & Analytics</h1>
-        <p class="text-blue-100 text-sm mt-1">Data insights on appointment volume, doctor performance, and service utilization</p>
+        <h1 class="dashboard-display-title text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Clinic Reports & Analytics</h1>
+        <p class="mt-1 text-sm text-slate-600">Data insights on appointment volume, doctor performance, and service utilization</p>
       </div>
 
       <div class="flex w-full items-center gap-3 md:w-auto">
         <button
-          class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-blue-900 shadow transition-colors hover:bg-blue-50 md:w-auto"
+          class="dashboard-action-primary w-full justify-center py-2.5 md:w-auto"
           @click="exportDoctorCsv"
         >
-          <LucideDownload class="h-4 w-4 text-blue-700" />
+          <LucideDownload class="h-4 w-4" />
           <span>Export Doctor Stats CSV</span>
         </button>
       </div>

@@ -100,14 +100,14 @@ const handleToggleUserActive = async (userId: string) => {
 
 <template>
   <div class="page-container space-y-8">
-    <section class="flex flex-col items-start justify-between gap-5 rounded-2xl bg-gradient-to-r from-blue-900 to-teal-800 p-5 text-white shadow-lg sm:p-8 md:flex-row md:items-center">
+    <section class="dashboard-banner flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
       <div class="min-w-0">
-        <span class="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur-sm">System administration</span>
-        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Administration Dashboard</h1>
-        <p class="mt-1 max-w-2xl text-sm text-blue-100">Monitor clinic operations, account activity, appointment volume, and configuration from one workspace.</p>
+        <span class="dashboard-kicker">System administration</span>
+        <h1 class="dashboard-display-title text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Administration Dashboard</h1>
+        <p class="mt-1 max-w-2xl text-sm text-slate-600">Monitor clinic operations, account activity, appointment volume, and configuration from one workspace.</p>
       </div>
-      <NuxtLink to="/admin" class="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow transition-colors hover:bg-blue-50 md:w-auto">
-        <LucideSettings class="h-4 w-4 text-blue-700" />
+      <NuxtLink to="/admin" class="dashboard-action-primary w-full shrink-0 justify-center py-2.5 text-sm md:w-auto">
+        <LucideSettings class="h-4 w-4" />
         <span>Manage Clinic</span>
       </NuxtLink>
     </section>
