@@ -99,6 +99,17 @@ SELECT appointment_reference, scheduled_at, status FROM appointments;
 
 ## Docker Setup
 
+### Before you begin
+
+The client laptop needs:
+
+- A 64-bit Windows 10/11 or Ubuntu installation with virtualization enabled
+- At least 8 GB RAM (16 GB recommended) and 10 GB of free disk space
+- Internet access for the first image build and external email/AI features
+- Git, Docker Engine, Docker Buildx, and Docker Compose v2
+
+The default setup uses ports `3000`, `5050`, `5432`, `8000`, `9000`, and `9001`. Stop any local service already using one of these ports before starting SMMG.
+
 ### 1. Install Docker CLI and Docker Compose
 
 SMMG uses Docker Engine and the Docker Compose CLI plugin. Docker Desktop is not required.
@@ -120,7 +131,7 @@ Install Docker Engine, the CLI, Buildx, and the Compose plugin from Docker's off
 
 ```bash
 sudo apt-get update
-sudo apt-get install ca-certificates curl
+sudo apt-get install ca-certificates curl git
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -145,6 +156,8 @@ docker compose version
 docker info
 ```
 
+`docker compose version` must report Compose v2. If `docker info` cannot connect to the Docker daemon, do not continue until Docker is running.
+
 If `docker info` reports a permission error, run Docker commands with `sudo` or configure Docker for non-root use using Docker's official Linux post-installation guide.
 
 ### 2. Clone and enter the project
@@ -166,6 +179,8 @@ cp .env.example .env
 
 Configure the administrator account, JWT secret, Resend settings, MinIO settings, and external AI provider values in `.env` before starting the system. The values in `.env.example` are placeholders; do not deploy them unchanged.
 
+At minimum, replace `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME`. Keep the Docker service hostnames from the template (for example, `postgres` and `minio`) because `localhost` inside the backend container refers to the backend container itself.
+
 For a complete client demo, `RESEND_API_KEY` and `EMAIL_FROM` must belong to a verified Resend sender so new users can receive verification codes. `AI_GOOGLE_API_KEY` is required for the AI assistant. The rest of the appointment system can start without those two integrations, but their related features will report that they are unavailable.
 
 ### 4. Build and start SMMG
@@ -180,6 +195,8 @@ Docker starts the Nuxt frontend, FastAPI backend, PostgreSQL, MinIO, and pgAdmin
 docker compose ps
 ```
 
+The `backend` and `postgres` rows should show `healthy`, and the remaining rows should show `Up`. The first startup can take several minutes while images and application dependencies are downloaded and built.
+
 Follow backend startup and seed logs:
 
 ```bash
@@ -187,6 +204,14 @@ docker compose logs -f backend
 ```
 
 Press `Ctrl+C` to stop following logs. The containers continue running.
+
+If a service is not running, inspect its logs before retrying:
+
+```bash
+docker compose logs --tail=200 <service-name>
+```
+
+Common causes on a new laptop are an occupied port, Docker not running, insufficient disk space, or missing required administrator values in `.env`.
 
 ### 5. Open and test the system
 
@@ -213,6 +238,12 @@ docker compose up -d --build
 
 # Stop containers while preserving data
 docker compose down
+```
+
+After changing `.env`, recreate the containers so the new values are loaded:
+
+```bash
+docker compose up -d --build --force-recreate
 ```
 
 To permanently remove the local PostgreSQL, MinIO, and pgAdmin data volumes:
