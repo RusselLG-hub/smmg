@@ -143,7 +143,7 @@ async def create_appointment(
             scheduled_at=scheduled_at,
             slot_duration=slot_duration,
             reason=data.reason,
-            status="confirmed",
+            status="pending",
         )
 
         # Trigger booking email notification (non-blocking side-effect)
@@ -191,6 +191,12 @@ async def cancel_appointment(
             raise BadRequestException(
                 detail="Appointments cannot be cancelled by patients within 24 hours of the scheduled time. Please contact clinic staff."
             )
+    elif current_user.role == "doctor":
+        my_doctor = await doctor_repository.get_by_user_id(db, current_user.id)
+        if not my_doctor or my_doctor.id != appt.doctor_profile_id:
+            raise ForbiddenException(detail="Doctors can only cancel their assigned appointments.")
+    elif current_user.role not in ["staff", "admin"]:
+        raise ForbiddenException(detail="You are not allowed to cancel this appointment.")
 
     if appt.status in ["cancelled", "completed"]:
         raise BadRequestException(detail=f"Cannot cancel appointment with status '{appt.status}'.")
@@ -237,6 +243,8 @@ async def reschedule_appointment(
             raise BadRequestException(
                 detail="Appointments cannot be rescheduled by patients within 24 hours of the scheduled time."
             )
+    elif current_user.role not in ["staff", "admin"]:
+        raise ForbiddenException(detail="Only patients, staff, and admins can reschedule appointments.")
 
     if appt.status in ["cancelled", "completed"]:
         raise BadRequestException(detail=f"Cannot reschedule appointment with status '{appt.status}'.")
@@ -256,7 +264,10 @@ async def reschedule_appointment(
         )
 
     try:
-        updated = await appointment_repository.reschedule(db, appointment_id, new_scheduled_at)
+        new_status = "pending" if current_user.role == "patient" else appt.status
+        updated = await appointment_repository.reschedule(
+            db, appointment_id, new_scheduled_at, new_status=new_status
+        )
         # Reset reminder state so new time receives reminder
         updated.reminder_sent_at = None
         await db.commit()
@@ -272,6 +283,7 @@ async def reschedule_appointment(
                 old_date_str=old_date_str,
                 new_date_str=data.date,
                 new_time_str=data.time,
+                pending_confirmation=current_user.role == "patient",
             )
         except Exception:
             pass
@@ -298,11 +310,14 @@ async def update_appointment_status(
         my_doctor = await doctor_repository.get_by_user_id(db, current_user.id)
         if not my_doctor or my_doctor.id != appt.doctor_profile_id:
             raise ForbiddenException(detail="Doctors can only update their assigned appointments.")
-
-    valid_transitions = {
-        "pending": ["confirmed", "cancelled"],
-        "confirmed": ["completed", "cancelled"],
-    }
+        valid_transitions = {"confirmed": ["completed", "cancelled"]}
+    elif current_user.role in ["staff", "admin"]:
+        valid_transitions = {
+            "pending": ["confirmed", "cancelled"],
+            "confirmed": ["cancelled"],
+        }
+    else:
+        raise ForbiddenException(detail="You are not allowed to update appointment status.")
 
     allowed_next = valid_transitions.get(appt.status, [])
     if data.status not in allowed_next:

@@ -183,7 +183,7 @@ const formatTime = (isoStr: string) => {
                 </td>
                 <td class="px-4 py-3 text-right whitespace-nowrap">
                   <button
-                    v-if="appt.status === 'confirmed' || appt.status === 'pending'"
+                    v-if="appt.status === 'confirmed'"
                     class="px-3 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 shadow-sm"
                     @click="handleUpdateStatus(appt.id, 'completed')"
                   >

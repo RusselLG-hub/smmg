@@ -65,7 +65,7 @@ const submitBooking = async () => {
       </header>
       <div v-if="loading" class="flex justify-center py-20"><LucideLoader2 class="h-8 w-8 animate-spin text-primary-600" /></div>
       <div v-else-if="bookedReference" class="space-y-5 p-6 sm:p-8">
-        <BaseAlertBanner type="success" :dismissible="false" :message="`Appointment booked. Reference: ${bookedReference}`" />
+        <BaseAlertBanner type="success" :dismissible="false" :message="`Appointment request submitted for clinic confirmation. Reference: ${bookedReference}`" />
         <NuxtLink to="/patient/appointments" class="btn btn-primary">View My Appointments</NuxtLink>
       </div>
       <form v-else class="space-y-6 p-6 sm:p-8" @submit.prevent="submitBooking">

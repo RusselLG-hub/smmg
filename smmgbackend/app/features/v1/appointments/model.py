@@ -43,7 +43,7 @@ class Appointment(Base):
         Integer, default=30, nullable=False
     )
     status: Mapped[str] = mapped_column(
-        String(20), default="confirmed", nullable=False, index=True
+        String(20), default="pending", nullable=False, index=True
     )  # pending, confirmed, cancelled, completed
     reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     cancellation_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)

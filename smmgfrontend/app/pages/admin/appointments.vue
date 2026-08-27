@@ -173,13 +173,6 @@ const formatTime = (isoStr: string) => {
                 Confirm
               </button>
               <button
-                v-if="appt.status === 'confirmed'"
-                class="px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700"
-                @click="handleUpdateStatus(appt.id, 'completed')"
-              >
-                Mark Complete
-              </button>
-              <button
                 v-if="appt.status !== 'cancelled' && appt.status !== 'completed'"
                 class="px-2 py-1 border border-red-200 text-red-600 rounded text-xs font-medium hover:bg-red-50"
                 @click="handleUpdateStatus(appt.id, 'cancelled')"

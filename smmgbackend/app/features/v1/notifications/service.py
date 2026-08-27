@@ -124,6 +124,7 @@ def send_reschedule_notification(
     old_date_str: str,
     new_date_str: str,
     new_time_str: str,
+    pending_confirmation: bool = False,
 ) -> None:
     try:
         subject, html, text = templates.build_reschedule_email(
@@ -133,6 +134,7 @@ def send_reschedule_notification(
             old_date_str=old_date_str,
             new_date_str=new_date_str,
             new_time_str=new_time_str,
+            pending_confirmation=pending_confirmation,
         )
         resend_provider.send_email(to=patient_email, subject=subject, html=html)
     except Exception as e:

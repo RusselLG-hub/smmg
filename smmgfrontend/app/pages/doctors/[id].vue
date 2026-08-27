@@ -118,7 +118,7 @@ const handleConfirmBooking = async () => {
         <div class="flex items-center gap-3 text-green-800">
           <LucideCheckCircle2 class="h-6 w-6 text-green-600 shrink-0" />
           <div>
-            <h3 class="text-lg font-bold">Appointment Booked Successfully!</h3>
+            <h3 class="text-lg font-bold">Appointment Request Submitted!</h3>
             <p class="text-xs text-green-700 mt-0.5">Your reference number is <strong class="font-mono text-sm underline">{{ bookingSuccess.reference }}</strong></p>
           </div>
         </div>

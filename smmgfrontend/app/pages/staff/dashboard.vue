@@ -165,13 +165,6 @@ const formatTime = (isoStr: string) => {
                   >
                     Confirm
                   </button>
-                  <button
-                    v-if="appt.status === 'confirmed'"
-                    class="px-2.5 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700"
-                    @click="handleUpdateStatus(appt.id, 'completed')"
-                  >
-                    Mark Complete
-                  </button>
                 </td>
               </tr>
             </tbody>

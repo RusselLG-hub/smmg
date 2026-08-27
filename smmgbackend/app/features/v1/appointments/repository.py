@@ -141,7 +141,7 @@ async def create_appointment(
     scheduled_at: datetime,
     slot_duration: int = 30,
     reason: str | None = None,
-    status: str = "confirmed",
+    status: str = "pending",
 ) -> Appointment:
     appointment = Appointment(
         appointment_reference=reference,
@@ -179,13 +179,18 @@ async def update_status(
 
 
 async def reschedule(
-    db: AsyncSession, appointment_id: str, new_scheduled_at: datetime
+    db: AsyncSession,
+    appointment_id: str,
+    new_scheduled_at: datetime,
+    new_status: str | None = None,
 ) -> Appointment | None:
     appt = await get_by_id(db, appointment_id)
     if not appt:
         return None
 
     appt.scheduled_at = new_scheduled_at
+    if new_status is not None:
+        appt.status = new_status
     await db.commit()
     await db.refresh(appt)
     return appt

@@ -10,17 +10,17 @@ def build_booking_confirmation_email(
     date_str: str,
     time_str: str,
 ) -> tuple[str, str]:
-    subject = f"Appointment Booked - Ref #{reference}"
+    subject = f"Appointment Request Received - Ref #{reference}"
     html = f"""
     <!DOCTYPE html>
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px; color: #111827;">
       <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb;">
         <div style="background-color: #0284c7; padding: 16px; border-radius: 8px; color: #ffffff; text-align: center;">
-          <h2 style="margin: 0; font-size: 20px;">Appointment Booking Confirmed</h2>
+          <h2 style="margin: 0; font-size: 20px;">Appointment Request Received</h2>
         </div>
         <p style="margin-top: 20px;">Dear <strong>{patient_name}</strong>,</p>
-        <p>Your appointment has been successfully scheduled. Please keep your reference number for future inquiries.</p>
+        <p>Your appointment request has been received and is awaiting clinic confirmation. Please keep your reference number for future inquiries.</p>
 
         <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
           <tr>
@@ -47,7 +47,7 @@ def build_booking_confirmation_email(
     """
     text = (
         f"Dear {patient_name},\n\n"
-        f"Your appointment has been successfully scheduled.\n"
+        f"Your appointment request has been received and is awaiting clinic confirmation.\n"
         f"Reference Number: {reference}\n"
         f"Doctor: Dr. {doctor_name}\n"
         f"Date & Time: {date_str} at {time_str}\n\n"
@@ -92,6 +92,7 @@ def build_reschedule_email(
     old_date_str: str,
     new_date_str: str,
     new_time_str: str,
+    pending_confirmation: bool = False,
 ) -> tuple[str, str, str]:
     subject = f"Appointment Rescheduled - Ref #{reference}"
     html = f"""
@@ -103,7 +104,7 @@ def build_reschedule_email(
           <h2 style="margin: 0; font-size: 20px;">Appointment Rescheduled</h2>
         </div>
         <p style="margin-top: 20px;">Dear <strong>{patient_name}</strong>,</p>
-        <p>Your appointment <strong>Ref #{reference}</strong> with Dr. {doctor_name} has been rescheduled.</p>
+        <p>Your appointment <strong>Ref #{reference}</strong> with Dr. {doctor_name} has been rescheduled.{" The new schedule is awaiting clinic confirmation." if pending_confirmation else ""}</p>
 
         <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 0 0 8px 0; color: #1e40af;"><strong>New Schedule:</strong></p>
@@ -117,7 +118,8 @@ def build_reschedule_email(
     </body>
     </html>
     """
-    text = f"Dear {patient_name},\n\nYour appointment Ref #{reference} with Dr. {doctor_name} has been rescheduled to {new_date_str} at {new_time_str}."
+    confirmation_note = " The new schedule is awaiting clinic confirmation." if pending_confirmation else ""
+    text = f"Dear {patient_name},\n\nYour appointment Ref #{reference} with Dr. {doctor_name} has been rescheduled to {new_date_str} at {new_time_str}.{confirmation_note}"
     return subject, html, text
 
 

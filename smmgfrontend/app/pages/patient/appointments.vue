@@ -93,7 +93,7 @@ const handleConfirmReschedule = async () => {
       rescheduleDate.value,
       rescheduleSlot.value
     )
-    actionSuccess.value = `Appointment ${selectedAppointment.value.appointment_reference} rescheduled successfully.`
+    actionSuccess.value = `Appointment ${selectedAppointment.value.appointment_reference} rescheduled and submitted for clinic confirmation.`
     showRescheduleModal.value = false
     await appointmentsStore.fetchMyAppointments(activeTab.value)
   } catch (err: any) {
