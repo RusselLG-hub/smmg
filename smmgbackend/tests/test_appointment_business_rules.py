@@ -55,6 +55,45 @@ class AppointmentBusinessRuleTests(unittest.IsolatedAsyncioTestCase):
                 schema.AppointmentCreate(doctor_profile_id="doctor-1", date="2099-01-01", time="09:00"),
             )
 
+    async def test_service_specialty_must_match_doctor(self):
+        doctor = SimpleNamespace(
+            id="doctor-1", is_active=True, specialty_id="specialty-a",
+            specialty=None, user=SimpleNamespace(name="Doctor"),
+        )
+        clinic_service = SimpleNamespace(
+            id="service-1", is_active=True, specialty_id="specialty-b", name="Cardiology",
+        )
+        with (
+            patch.object(service.patient_repository, "get_by_user_id", AsyncMock(return_value=SimpleNamespace(id="patient-1"))),
+            patch.object(service.doctor_repository, "get_by_id", AsyncMock(return_value=doctor)),
+            patch.object(service.clinic_service_repository, "get_by_id", AsyncMock(return_value=clinic_service)),
+            patch.object(service, "_validate_slot_against_schedule", AsyncMock()) as validate_slot,
+        ):
+            with self.assertRaises(BadRequestException):
+                await service.create_appointment(
+                    AsyncMock(), user("patient"),
+                    schema.AppointmentCreate(
+                        doctor_profile_id="doctor-1", service_id="service-1",
+                        date="2099-01-01", time="09:00",
+                    ),
+                )
+        validate_slot.assert_not_awaited()
+
+    async def test_available_date_override_replaces_weekly_schedule(self):
+        override = SimpleNamespace(
+            is_available=True, start_time="09:00", end_time="11:00"
+        )
+        with (
+            patch.object(service.schedule_repository, "get_override_by_date", AsyncMock(return_value=override)),
+            patch.object(service.schedule_repository, "get_by_doctor_and_day", AsyncMock()) as weekly,
+        ):
+            scheduled_at, duration = await service._validate_slot_against_schedule(
+                AsyncMock(), "doctor-1", "2099-01-01", "09:30"
+            )
+        self.assertEqual(scheduled_at.strftime("%H:%M"), "09:30")
+        self.assertEqual(duration, 30)
+        weekly.assert_not_awaited()
+
     async def test_staff_can_confirm_pending(self):
         appt = appointment("pending")
         updated = appointment("confirmed")

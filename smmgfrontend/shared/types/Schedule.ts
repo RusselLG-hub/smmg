@@ -41,6 +41,13 @@ export interface AvailabilityResponse {
   slots: TimeSlot[]
 }
 
+export interface MonthlyAvailabilityResponse {
+  doctor_id: string
+  year: number
+  month: number
+  days: AvailabilityResponse[]
+}
+
 export const WEEKDAYS = [
   'Monday',
   'Tuesday',

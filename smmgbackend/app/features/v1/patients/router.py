@@ -10,6 +10,15 @@ from app.features.v1.users import model as user_model
 router = APIRouter(prefix="/v1/patients", tags=["patients"])
 
 
+@router.get(
+    "",
+    response_model=list[patient_schema.PatientProfileRead],
+    dependencies=[Depends(require_role("staff", "admin"))],
+)
+async def list_patient_records(db: AsyncSession = Depends(get_db)):
+    return await patient_service.list_patient_records(db)
+
+
 @router.get("/me", response_model=patient_schema.PatientProfileRead)
 async def get_my_profile(
     current_user: user_model.User = Depends(require_role("patient")),

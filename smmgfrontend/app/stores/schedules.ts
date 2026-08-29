@@ -6,11 +6,13 @@ import type {
   DoctorSchedule,
   DoctorScheduleCreate,
   DoctorScheduleUpdate,
+  MonthlyAvailabilityResponse,
 } from '~~/shared/types/Schedule'
 
 export const useSchedulesStore = defineStore('schedules', () => {
   const schedules = ref<DoctorSchedule[]>([])
   const availability = ref<AvailabilityResponse | null>(null)
+  const monthlyAvailability = ref<MonthlyAvailabilityResponse | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -103,9 +105,23 @@ export const useSchedulesStore = defineStore('schedules', () => {
     }
   }
 
+  const fetchMonthlyAvailability = async (doctorId: string, year: number, month: number) => {
+    loading.value = true
+    error.value = null
+    try {
+      monthlyAvailability.value = await schedulesService.getDoctorMonthlyAvailability(doctorId, year, month)
+      return monthlyAvailability.value
+    } catch (err: any) {
+      error.value = err?.data?.detail || 'Failed to fetch monthly availability'
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     schedules,
     availability,
+    monthlyAvailability,
     loading,
     error,
     fetchDoctorSchedules,
@@ -114,5 +130,6 @@ export const useSchedulesStore = defineStore('schedules', () => {
     updateSchedule,
     deleteSchedule,
     fetchAvailability,
+    fetchMonthlyAvailability,
   }
 })

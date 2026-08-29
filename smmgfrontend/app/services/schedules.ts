@@ -1,5 +1,6 @@
 import type {
   AvailabilityResponse,
+  MonthlyAvailabilityResponse,
   DoctorSchedule,
   DoctorScheduleCreate,
   DoctorScheduleUpdate,
@@ -32,6 +33,11 @@ export const useSchedulesService = () => {
     getDoctorAvailability: (doctorId: string, dateStr: string) =>
       $api<AvailabilityResponse>(`/v1/doctors/${doctorId}/availability`, {
         params: { date: dateStr },
+      }),
+
+    getDoctorMonthlyAvailability: (doctorId: string, year: number, month: number) =>
+      $api<MonthlyAvailabilityResponse>(`/v1/doctors/${doctorId}/availability/month`, {
+        params: { year, month },
       }),
   }
 }

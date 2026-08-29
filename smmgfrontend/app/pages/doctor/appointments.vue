@@ -14,6 +14,7 @@ const selectedDate = ref<string>(todayStr)
 const selectedStatus = ref<string>('')
 const actionSuccess = ref<string | null>(null)
 const actionError = ref<string | null>(null)
+const selectedPatientAppointment = ref<Appointment | null>(null)
 
 onMounted(async () => {
   await appointmentsStore.fetchDoctorAppointments(selectedDate.value, selectedStatus.value || undefined)
@@ -149,6 +150,7 @@ const formatTime = (isoStr: string) => {
               <BaseStatusBadge :status="appt.status" />
             </td>
             <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
+              <button class="px-2.5 py-1 text-xs font-medium text-primary-700 hover:underline" @click="selectedPatientAppointment = appt">Patient Info</button>
               <button
                 v-if="appt.status === 'confirmed'"
                 class="px-2.5 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700"
@@ -168,5 +170,6 @@ const formatTime = (isoStr: string) => {
         </tbody>
       </table>
     </div>
+    <FeaturesAppointmentsPatientInfoModal :model-value="Boolean(selectedPatientAppointment)" :appointment="selectedPatientAppointment" @update:model-value="!$event && (selectedPatientAppointment = null)" />
   </div>
 </template>

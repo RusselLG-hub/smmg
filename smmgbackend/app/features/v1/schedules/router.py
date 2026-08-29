@@ -73,3 +73,18 @@ async def get_doctor_availability(
     db: AsyncSession = Depends(get_db),
 ):
     return await schedule_service.get_doctor_availability(db, doctor_id, date)
+
+
+@router.get(
+    "/v1/doctors/{doctor_id}/availability/month",
+    response_model=schedule_schema.MonthlyAvailabilityResponse,
+)
+async def get_doctor_monthly_availability(
+    doctor_id: str,
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+    db: AsyncSession = Depends(get_db),
+):
+    return await schedule_service.get_doctor_monthly_availability(
+        db, doctor_id, year, month
+    )

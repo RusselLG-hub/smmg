@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useDoctorsStore } from '~/stores/doctors'
 import { useSchedulesStore } from '~/stores/schedules'
 import { useClinicServicesStore } from '~/stores/clinicServices'
@@ -18,14 +18,57 @@ const doctorId = String(route.params.id)
 const todayStr = new Date().toISOString().split('T')[0]
 
 const selectedDate = ref(todayStr)
+const monthCursor = ref(new Date(`${todayStr}T00:00:00`))
 const selectedSlot = ref<string | null>(null)
-const selectedServiceId = ref<string>('')
+const selectedServiceId = ref<string>(String(route.query.service || ''))
 const reasonInput = ref('')
 
 const showBookingModal = ref(false)
 const bookingSuccess = ref<{ reference: string; date: string; time: string } | null>(null)
 const bookingError = ref<string | null>(null)
 const isSubmitting = ref(false)
+const calendarWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const monthLabel = computed(() => monthCursor.value.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }))
+const compatibleServices = computed(() => {
+  const specialtyId = doctorsStore.currentDoctor?.specialty_id
+  return clinicServicesStore.services.filter(service =>
+    !service.specialty_id || service.specialty_id === specialtyId,
+  )
+})
+const calendarDays = computed(() => {
+  const response = schedulesStore.monthlyAvailability
+  if (!response) return []
+  const leading = new Date(response.year, response.month - 1, 1).getDay()
+  return [
+    ...Array.from({ length: leading }, () => null),
+    ...response.days,
+  ]
+})
+
+const loadMonth = async () => {
+  await schedulesStore.fetchMonthlyAvailability(
+    doctorId,
+    monthCursor.value.getFullYear(),
+    monthCursor.value.getMonth() + 1,
+  )
+}
+
+const changeMonth = async (offset: number) => {
+  const next = new Date(monthCursor.value)
+  next.setMonth(next.getMonth() + offset, 1)
+  monthCursor.value = next
+  selectedSlot.value = null
+  schedulesStore.availability = null
+  await loadMonth()
+}
+
+const selectAvailabilityDay = (date: string) => {
+  if (date < todayStr) return
+  const day = schedulesStore.monthlyAvailability?.days.find(item => item.date === date)
+  selectedDate.value = date
+  selectedSlot.value = null
+  schedulesStore.availability = day || null
+}
 
 onMounted(async () => {
   await Promise.all([
@@ -33,14 +76,11 @@ onMounted(async () => {
     clinicServicesStore.fetchServices(true),
   ])
   if (doctorsStore.currentDoctor) {
-    await schedulesStore.fetchAvailability(doctorId, selectedDate.value)
-  }
-})
-
-watch(selectedDate, async (newDate) => {
-  if (newDate && doctorId) {
-    selectedSlot.value = null
-    await schedulesStore.fetchAvailability(doctorId, newDate)
+    if (selectedServiceId.value && !compatibleServices.value.some(service => service.id === selectedServiceId.value)) {
+      selectedServiceId.value = ''
+    }
+    await loadMonth()
+    selectAvailabilityDay(selectedDate.value)
   }
 })
 
@@ -86,6 +126,7 @@ const handleConfirmBooking = async () => {
 
     // Refresh availability slots after booking
     await schedulesStore.fetchAvailability(doctorId, selectedDate.value)
+    await loadMonth()
   } catch (err: any) {
     bookingError.value = err?.data?.detail || 'Failed to complete booking. Please try another time slot.'
     // Refresh availability in case of conflict
@@ -204,25 +245,40 @@ const handleConfirmBooking = async () => {
 
           <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <!-- Service Selector -->
-            <div v-if="clinicServicesStore.services.length > 0" class="w-full sm:w-48">
+            <div v-if="compatibleServices.length > 0" class="w-full sm:w-48">
               <label class="form-label mb-1">Clinic Service</label>
               <select v-model="selectedServiceId" class="form-input w-full text-xs">
                 <option value="">General Consultation</option>
-                <option v-for="srv in clinicServicesStore.services" :key="srv.id" :value="srv.id">{{ srv.name }}</option>
+                <option v-for="srv in compatibleServices" :key="srv.id" :value="srv.id">{{ srv.name }}</option>
               </select>
             </div>
 
-            <!-- Date Selector -->
-            <div class="w-full sm:w-44">
-              <label class="form-label mb-1">Target Date</label>
-              <input
-                v-model="selectedDate"
-                type="date"
-                :min="todayStr"
-                class="form-input w-full text-xs"
-              />
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div class="mb-4 flex items-center justify-between">
+            <button type="button" class="btn btn-secondary !px-3" aria-label="Previous month" @click="changeMonth(-1)"><LucideChevronLeft class="h-4 w-4" /></button>
+            <h3 class="font-semibold text-gray-900">{{ monthLabel }}</h3>
+            <button type="button" class="btn btn-secondary !px-3" aria-label="Next month" @click="changeMonth(1)"><LucideChevronRight class="h-4 w-4" /></button>
+          </div>
+          <div class="grid grid-cols-7 gap-1 text-center">
+            <div v-for="dayName in calendarWeekdays" :key="dayName" class="py-1 text-[10px] font-bold uppercase text-gray-500">{{ dayName }}</div>
+            <div v-for="(day, index) in calendarDays" :key="day?.date || `blank-${index}`" class="aspect-square">
+              <button
+                v-if="day"
+                type="button"
+                :disabled="day.date < todayStr || day.slots.length === 0"
+                class="flex h-full w-full flex-col items-center justify-center rounded-lg border text-xs transition-colors disabled:cursor-not-allowed"
+                :class="selectedDate === day.date ? 'border-primary-600 bg-primary-600 text-white' : day.date < todayStr ? 'border-transparent text-gray-300' : day.slots.length ? 'border-green-200 bg-green-50 font-semibold text-green-800 hover:border-green-400' : 'border-gray-200 bg-white text-gray-400'"
+                @click="selectAvailabilityDay(day.date)"
+              >
+                <span>{{ Number(day.date.slice(-2)) }}</span>
+                <span v-if="day.slots.length" class="mt-0.5 text-[9px]">{{ day.slots.length }} slots</span>
+              </button>
             </div>
           </div>
+          <div class="mt-3 flex flex-wrap gap-4 text-[10px] text-gray-600"><span><i class="mr-1 inline-block h-2.5 w-2.5 rounded bg-green-100 ring-1 ring-green-300"></i>Available</span><span><i class="mr-1 inline-block h-2.5 w-2.5 rounded bg-white ring-1 ring-gray-300"></i>Unavailable / fully booked</span></div>
         </div>
 
         <!-- Availability Loading State -->

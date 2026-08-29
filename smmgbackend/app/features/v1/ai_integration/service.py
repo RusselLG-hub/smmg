@@ -126,6 +126,9 @@ async def send_user_message(
             detail="AI assistant is temporarily unavailable. Please try again later."
         ) from exc
 
+    if not assistant_reply.strip():
+        assistant_reply = prompts.OUT_OF_SCOPE_RESPONSE
+
     # 5. Persist Assistant Message
     assistant_msg = await ai_repository.create_message(
         db, session_id=session_id, role="assistant", content=assistant_reply

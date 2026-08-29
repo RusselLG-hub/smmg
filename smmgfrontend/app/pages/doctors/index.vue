@@ -5,13 +5,15 @@ import { useSpecialtiesStore } from '~/stores/specialties'
 
 const doctorsStore = useDoctorsStore()
 const specialtiesStore = useSpecialtiesStore()
+const route = useRoute()
 
-const selectedSpecialty = ref<string>('')
+const selectedSpecialty = ref<string>(String(route.query.specialty || ''))
+const selectedServiceId = String(route.query.service || '')
 
 onMounted(async () => {
   await Promise.all([
     specialtiesStore.fetchSpecialties(true),
-    doctorsStore.fetchDoctors(true),
+    doctorsStore.fetchDoctors(true, selectedSpecialty.value || undefined),
   ])
 })
 
@@ -101,10 +103,10 @@ watch(selectedSpecialty, async (newVal) => {
 
         <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end">
           <NuxtLink
-            :to="`/doctors/${doc.id}`"
+            :to="{ path: `/doctors/${doc.id}`, query: selectedServiceId ? { service: selectedServiceId } : {} }"
             class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
           >
-            <span>View Doctor Profile</span>
+            <span>{{ selectedServiceId ? 'Choose Doctor' : 'View Doctor Profile' }}</span>
             <LucideChevronRight class="h-4 w-4" />
           </NuxtLink>
         </div>

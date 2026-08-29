@@ -97,11 +97,34 @@ const staffLinks = [
 const adminLinks = [
   { name: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Appointments', to: '/admin/appointments', icon: Calendar },
-  { name: 'Management', to: '/admin', icon: Settings },
   { name: 'Schedules', to: '/admin/schedules', icon: Clock },
   { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
   { name: 'AI Monitoring', to: '/admin/ai-monitoring', icon: Bot },
   { name: 'My Profile', to: '/account/profile', icon: User },
+]
+
+const adminManagementGroups = [
+  {
+    name: 'User Management',
+    icon: User,
+    links: [
+      { name: 'Doctors', to: '/admin?tab=doctors' },
+      { name: 'Staff', to: '/admin?tab=staff' },
+    ],
+  },
+  {
+    name: 'Management',
+    icon: Settings,
+    links: [
+      { name: 'Specialties', to: '/admin?tab=specialties' },
+      { name: 'Services', to: '/admin?tab=services' },
+    ],
+  },
+  {
+    name: 'Record Management',
+    icon: ClipboardList,
+    links: [{ name: 'Patients', to: '/admin?tab=patients' }],
+  },
 ]
 
 const publicLinks = [
@@ -170,6 +193,27 @@ const isActive = (path: string) => {
               <span>{{ link.name }}</span>
             </NuxtLink>
           </nav>
+
+          <div v-if="authStore.user?.role === 'admin'" class="space-y-4">
+            <details v-for="group in adminManagementGroups" :key="group.name" open class="group">
+              <summary class="mb-1 flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 hover:bg-white/70">
+                <component :is="group.icon" class="h-3.5 w-3.5" />
+                <span>{{ group.name }}</span>
+                <LucideChevronDown class="ml-auto h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+              </summary>
+              <nav class="space-y-1 border-l border-blue-200 pl-3 ml-5">
+                <NuxtLink
+                  v-for="link in group.links"
+                  :key="link.to"
+                  :to="link.to"
+                  class="block rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-white hover:text-blue-800"
+                  :class="route.fullPath === link.to ? 'bg-white font-semibold text-blue-800 shadow-sm' : ''"
+                >
+                  {{ link.name }}
+                </NuxtLink>
+              </nav>
+            </details>
+          </div>
 
           <!-- Public links section -->
           <div>

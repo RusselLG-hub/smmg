@@ -4,6 +4,9 @@ export const usePatientService = () => {
   const { $api } = useNuxtApp()
 
   return {
+    getPatientRecords: () =>
+      $api<PatientProfile[]>('/v1/patients'),
+
     getMyProfile: () =>
       $api<PatientProfile>('/v1/patients/me'),
 

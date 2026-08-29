@@ -52,22 +52,26 @@ async def _validate_slot_against_schedule(
     if override and not override.is_available:
         raise BadRequestException(detail="Doctor is not available on this date.")
 
-    # Check schedule
+    # An available date override replaces the recurring weekly schedule.
     day_of_week = req_date.weekday()
-    schedules = await schedule_repository.get_by_doctor_and_day(
-        db, doctor_id, day_of_week, active_only=True
-    )
+    if override and override.is_available and override.start_time and override.end_time:
+        schedule_ranges = [(override.start_time, override.end_time)]
+    else:
+        schedules = await schedule_repository.get_by_doctor_and_day(
+            db, doctor_id, day_of_week, active_only=True
+        )
+        schedule_ranges = [(schedule.start_time, schedule.end_time) for schedule in schedules]
 
-    if not schedules:
+    if not schedule_ranges:
         raise BadRequestException(detail="Doctor has no active working schedule for this day.")
 
     slot_valid = False
     slot_duration = 30
 
-    for sch in schedules:
-        start_t = _parse_time(sch.start_time)
-        end_t = _parse_time(sch.end_time)
-        duration = timedelta(minutes=sch.slot_duration_minutes)
+    for start_time, end_time in schedule_ranges:
+        start_t = _parse_time(start_time)
+        end_t = _parse_time(end_time)
+        duration = timedelta(minutes=30)
 
         curr = datetime.combine(req_date, start_t, tzinfo=timezone.utc)
         end_dt = datetime.combine(req_date, end_t, tzinfo=timezone.utc)
@@ -75,7 +79,7 @@ async def _validate_slot_against_schedule(
         while curr + duration <= end_dt:
             if curr.time() == req_time:
                 slot_valid = True
-                slot_duration = sch.slot_duration_minutes
+                slot_duration = 30
                 break
             curr += duration
         if slot_valid:
@@ -112,6 +116,10 @@ async def create_appointment(
         srv = await clinic_service_repository.get_by_id(db, data.service_id)
         if not srv or not srv.is_active:
             raise NotFoundException(detail="Clinic service not found or inactive.")
+        if srv.specialty_id and srv.specialty_id != doctor.specialty_id:
+            raise BadRequestException(
+                detail="The selected doctor does not provide this clinic service."
+            )
         srv_name = srv.name
 
     # Schedule & Slot Validation

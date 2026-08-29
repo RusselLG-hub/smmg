@@ -60,6 +60,12 @@ onMounted(async () => {
               <LucideCheck class="h-3.5 w-3.5" />
               Available Service
             </span>
+            <NuxtLink
+              :to="{ path: '/doctors', query: { service: srv.id, ...(srv.specialty_id ? { specialty: srv.specialty_id } : {}) } }"
+              class="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-2 font-semibold text-white hover:bg-primary-700"
+            >
+              Book This Service <LucideArrowRight class="h-3.5 w-3.5" />
+            </NuxtLink>
           </div>
         </div>
       </div>

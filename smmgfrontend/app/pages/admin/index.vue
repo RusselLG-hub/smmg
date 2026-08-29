@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useDoctorsStore } from '~/stores/doctors'
 import { useSpecialtiesStore } from '~/stores/specialties'
 import { useClinicServicesStore } from '~/stores/clinicServices'
@@ -10,6 +10,10 @@ import type { Doctor } from '~~/shared/types/Doctor'
 import type { Specialty } from '~~/shared/types/Specialty'
 import type { ClinicService } from '~~/shared/types/ClinicService'
 import type { User } from '~~/shared/types/User'
+import type { PatientProfile } from '~~/shared/types/Patient'
+import { usePatientService } from '~/services/patient'
+import { useAppointmentsService } from '~/services/appointments'
+import type { Appointment } from '~~/shared/types/Appointment'
 
 definePageMeta({
   middleware: 'auth',
@@ -20,16 +24,42 @@ const specialtiesStore = useSpecialtiesStore()
 const clinicServicesStore = useClinicServicesStore()
 const uploadService = useUploadService()
 const usersService = useUsersService()
+const patientService = usePatientService()
+const appointmentsService = useAppointmentsService()
 
 const route = useRoute()
 const requestedTab = String(route.query.tab || '')
-const activeTab = ref<'doctors' | 'staff' | 'specialties' | 'services'>(
-  ['doctors', 'staff', 'specialties', 'services'].includes(requestedTab)
-    ? requestedTab as 'doctors' | 'staff' | 'specialties' | 'services'
+const activeTab = ref<'doctors' | 'staff' | 'specialties' | 'services' | 'patients'>(
+  ['doctors', 'staff', 'specialties', 'services', 'patients'].includes(requestedTab)
+    ? requestedTab as 'doctors' | 'staff' | 'specialties' | 'services' | 'patients'
     : 'doctors',
+)
+watch(
+  () => route.query.tab,
+  (tab) => {
+    const value = String(tab || '')
+    if (['doctors', 'staff', 'specialties', 'services', 'patients'].includes(value)) {
+      activeTab.value = value as typeof activeTab.value
+    }
+  },
 )
 const staffUsers = ref<User[]>([])
 const loadingStaff = ref(false)
+const patientRecords = ref<PatientProfile[]>([])
+const loadingPatients = ref(false)
+const patientSearch = ref('')
+const selectedPatientRecord = ref<PatientProfile | null>(null)
+const patientAppointments = ref<Appointment[]>([])
+const loadingPatientHistory = ref(false)
+const filteredPatientRecords = computed(() => {
+  const query = patientSearch.value.trim().toLowerCase()
+  if (!query) return patientRecords.value
+  return patientRecords.value.filter(patient =>
+    patient.user.name.toLowerCase().includes(query)
+    || patient.user.email.toLowerCase().includes(query)
+    || (patient.phone || '').toLowerCase().includes(query),
+  )
+})
 
 const showDoctorModal = ref(false)
 const showStaffModal = ref(false)
@@ -91,10 +121,35 @@ onMounted(async () => {
   await Promise.all([
     doctorsStore.fetchDoctors(false),
     fetchStaff(),
+    fetchPatients(),
     specialtiesStore.fetchSpecialties(false),
     clinicServicesStore.fetchServices(false),
   ])
 })
+
+async function fetchPatients() {
+  loadingPatients.value = true
+  try {
+    patientRecords.value = await patientService.getPatientRecords()
+  } catch (err: any) {
+    actionError.value = err?.data?.detail || 'Failed to load patient records'
+  } finally {
+    loadingPatients.value = false
+  }
+}
+
+async function openPatientRecord(patient: PatientProfile) {
+  selectedPatientRecord.value = patient
+  loadingPatientHistory.value = true
+  try {
+    patientAppointments.value = await appointmentsService.getAdminAppointments({ patient_id: patient.id })
+  } catch (err: any) {
+    actionError.value = err?.data?.detail || 'Failed to load patient appointment history'
+    patientAppointments.value = []
+  } finally {
+    loadingPatientHistory.value = false
+  }
+}
 
 async function fetchStaff() {
   loadingStaff.value = true
@@ -405,6 +460,15 @@ const confirmDelete = async () => {
         <LucideHeartHandshake class="h-4 w-4" />
         <span>Services ({{ clinicServicesStore.services.length }})</span>
       </button>
+
+      <button
+        class="py-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2"
+        :class="activeTab === 'patients' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+        @click="activeTab = 'patients'"
+      >
+        <LucideFolderHeart class="h-4 w-4" />
+        <span>Patient Records ({{ patientRecords.length }})</span>
+      </button>
     </div>
 
     <!-- TAB 1: DOCTOR MANAGEMENT -->
@@ -612,6 +676,51 @@ const confirmDelete = async () => {
         </table>
       </div>
     </div>
+
+    <!-- MODAL: ADD STAFF -->
+    <div v-if="activeTab === 'patients'" class="space-y-6">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">Patient Record Management</h2>
+        <p class="text-xs text-gray-500">View registered patient profiles and contact information.</p>
+      </div>
+      <div class="max-w-md"><label class="form-label">Search Patients</label><div class="relative"><LucideSearch class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" /><input v-model="patientSearch" class="form-input pl-9" placeholder="Search by name, email, or phone" /></div></div>
+      <div v-if="loadingPatients" class="flex justify-center py-12"><LucideLoader2 class="h-8 w-8 animate-spin text-primary-600" /></div>
+      <div v-else class="card-table">
+        <table class="w-full text-left text-sm text-gray-700">
+          <thead class="border-b border-gray-200 bg-gray-50 font-semibold"><tr><th class="px-4 py-3">Patient</th><th class="px-4 py-3">Contact</th><th class="px-4 py-3">Demographics</th><th class="px-4 py-3">Address</th><th class="px-4 py-3">Status</th></tr></thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="patient in filteredPatientRecords" :key="patient.id" class="hover:bg-gray-50">
+              <td class="px-4 py-3"><div class="font-semibold text-gray-900">{{ patient.user.name }}</div><div class="text-xs text-gray-500">{{ patient.user.email }}</div></td>
+              <td class="px-4 py-3">{{ patient.phone || 'Not provided' }}</td>
+              <td class="px-4 py-3"><div>{{ patient.gender || 'Not provided' }}</div><div class="text-xs text-gray-500">Born: {{ patient.date_of_birth || 'Not provided' }}</div></td>
+              <td class="max-w-xs px-4 py-3">{{ patient.address || 'Not provided' }}</td>
+              <td class="px-4 py-3"><div class="flex items-center justify-between gap-3"><BaseStatusBadge :status="patient.user.is_active ? 'Active' : 'Inactive'" /><button class="text-xs font-semibold text-primary-700 hover:underline" @click="openPatientRecord(patient)">View Record</button></div></td>
+            </tr>
+            <tr v-if="filteredPatientRecords.length === 0"><td colspan="5" class="px-4 py-10 text-center text-gray-500">No patient records match your search.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <BaseModal :model-value="Boolean(selectedPatientRecord)" title="Patient Record" description="Profile details and appointment history" max-width="xl" @update:model-value="!$event && (selectedPatientRecord = null)">
+      <div v-if="selectedPatientRecord" class="space-y-6">
+        <div class="grid gap-4 rounded-xl bg-gray-50 p-4 text-sm sm:grid-cols-2">
+          <div><p class="text-xs font-semibold uppercase text-gray-500">Patient</p><p class="mt-1 font-bold text-gray-900">{{ selectedPatientRecord.user.name }}</p><p class="text-gray-600">{{ selectedPatientRecord.user.email }}</p></div>
+          <div><p class="text-xs font-semibold uppercase text-gray-500">Contact</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.phone || 'Not provided' }}</p></div>
+          <div><p class="text-xs font-semibold uppercase text-gray-500">Demographics</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.gender || 'Not provided' }} · Born {{ selectedPatientRecord.date_of_birth || 'Not provided' }}</p></div>
+          <div><p class="text-xs font-semibold uppercase text-gray-500">Address</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.address || 'Not provided' }}</p></div>
+        </div>
+        <div><h3 class="font-bold text-gray-900">Appointment History</h3><p class="text-xs text-gray-500">All recorded appointments for this patient.</p></div>
+        <div v-if="loadingPatientHistory" class="flex justify-center py-8"><LucideLoader2 class="h-6 w-6 animate-spin text-primary-600" /></div>
+        <div v-else class="space-y-2">
+          <div v-for="appointment in patientAppointments" :key="appointment.id" class="flex flex-col gap-2 rounded-xl border border-gray-200 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div><p class="font-semibold text-gray-900">{{ appointment.service?.name || 'General consultation' }} with Dr. {{ appointment.doctor.user.name }}</p><p class="text-xs text-gray-500">{{ new Date(appointment.scheduled_at).toLocaleString() }} · {{ appointment.appointment_reference }}</p></div>
+            <BaseStatusBadge :status="appointment.status" />
+          </div>
+          <p v-if="patientAppointments.length === 0" class="py-6 text-center text-sm text-gray-500">No appointment history recorded.</p>
+        </div>
+      </div>
+    </BaseModal>
 
     <!-- MODAL: ADD STAFF -->
     <div v-if="showStaffModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Create staff account" @click.self="showStaffModal = false">

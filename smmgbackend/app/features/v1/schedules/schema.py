@@ -67,3 +67,10 @@ class AvailabilityResponse(BaseModel):
     day_of_week: int
     is_working_day: bool
     slots: list[TimeSlot]
+
+
+class MonthlyAvailabilityResponse(BaseModel):
+    doctor_id: str
+    year: int
+    month: int
+    days: list[AvailabilityResponse]

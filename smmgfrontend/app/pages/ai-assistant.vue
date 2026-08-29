@@ -19,6 +19,17 @@ const sidebarOpen = ref(false)
 const pendingDeleteId = ref<string | null>(null)
 const deletingChat = ref(false)
 const hasActiveChat = computed(() => Boolean(aiStore.activeSessionId && aiStore.activeSession))
+const suggestedQuestions = [
+  'What should I do for a minor burn?',
+  'How do I properly clean a small cut?',
+  'When should a fever be checked by a doctor?',
+  'What are warning signs of a medical emergency?',
+]
+const healthTips = [
+  'Drink water regularly, especially during hot weather or physical activity.',
+  'Wash hands with soap for at least 20 seconds to reduce the spread of infection.',
+  'Seek urgent care for severe chest pain, trouble breathing, heavy bleeding, or loss of consciousness.',
+]
 
 onMounted(async () => {
   if (authStore.user?.role === 'patient' && !profileImageUrl.value) {
@@ -56,6 +67,12 @@ const handleSendMessage = async () => {
   inputMessage.value = ''
   await aiStore.sendMessage(text)
   scrollToBottom()
+}
+
+const handleSuggestedQuestion = async (question: string) => {
+  if (aiStore.sending || !hasActiveChat.value) return
+  inputMessage.value = question
+  await handleSendMessage()
 }
 
 const handleCreateNewChat = async () => {
@@ -207,7 +224,7 @@ const formatMessageContent = (content: string) => {
 
           <template v-else-if="aiStore.activeSession?.messages">
             <!-- Initial Welcome Message if empty session -->
-            <div v-if="aiStore.activeSession.messages.length === 0" class="py-12 text-center space-y-3 max-w-md mx-auto">
+            <div v-if="aiStore.activeSession.messages.length === 0" class="py-8 text-center space-y-3 max-w-2xl mx-auto">
               <div class="h-12 w-12 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center mx-auto">
                 <LucideStethoscope class="h-6 w-6" />
               </div>
@@ -215,6 +232,24 @@ const formatMessageContent = (content: string) => {
               <p class="text-xs text-gray-500">
                 Ask about basic first-aid procedures, general symptom information, or wellness advice.
               </p>
+              <div class="grid gap-2 pt-3 sm:grid-cols-2">
+                <button
+                  v-for="question in suggestedQuestions"
+                  :key="question"
+                  type="button"
+                  class="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2.5 text-left text-xs font-medium text-teal-800 transition-colors hover:border-teal-300 hover:bg-teal-100"
+                  @click="handleSuggestedQuestion(question)"
+                >
+                  {{ question }}
+                </button>
+              </div>
+              <div class="pt-5 text-left">
+                <div class="mb-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide text-teal-700"><LucideHeartPulse class="h-4 w-4" />Quick Health Tips</div>
+                <div class="grid gap-2 sm:grid-cols-3">
+                  <div v-for="tip in healthTips" :key="tip" class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs leading-5 text-gray-700">{{ tip }}</div>
+                </div>
+                <p class="mt-2 text-center text-[10px] text-gray-500">General education only. Consult a healthcare professional for personal medical advice.</p>
+              </div>
             </div>
 
             <!-- Message List -->

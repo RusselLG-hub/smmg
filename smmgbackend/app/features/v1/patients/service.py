@@ -3,6 +3,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.features.v1.patients import repository as patient_repository
 from app.features.v1.patients import schema as patient_schema
 from app.features.v1.users import model as user_model
+from app.features.v1.users import repository as user_repository
+
+
+async def list_patient_records(
+    db: AsyncSession,
+) -> list[patient_schema.PatientProfileRead]:
+    users = await user_repository.list_users(db, role="patient")
+    records = []
+    for user in users:
+        profile = await patient_repository.get_or_create(db, user.id)
+        records.append(patient_schema.PatientProfileRead.model_validate(profile))
+    return records
 
 
 async def get_patient_profile(

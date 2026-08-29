@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import datetime, time, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,8 @@ from app.features.v1.doctors import repository as doctor_repository
 from app.features.v1.schedules import repository as schedule_repository
 from app.features.v1.schedules import schema as schedule_schema
 from app.features.v1.users import model as user_model
+
+APPOINTMENT_SLOT_MINUTES = 30
 
 
 def _parse_time(time_str: str) -> time:
@@ -40,6 +43,7 @@ async def create_schedule(
     current_user: user_model.User,
     data: schedule_schema.DoctorScheduleCreate,
 ) -> schedule_schema.DoctorScheduleRead:
+    data.slot_duration_minutes = APPOINTMENT_SLOT_MINUTES
     # Resolve target doctor_profile_id
     doctor_id = data.doctor_profile_id
 
@@ -85,6 +89,7 @@ async def update_schedule(
     schedule_id: str,
     data: schedule_schema.DoctorScheduleUpdate,
 ) -> schedule_schema.DoctorScheduleRead:
+    data.slot_duration_minutes = APPOINTMENT_SLOT_MINUTES
     schedule = await schedule_repository.get_by_id(db, schedule_id)
     if not schedule:
         raise NotFoundException(detail="Schedule not found")
@@ -184,7 +189,7 @@ async def get_doctor_availability(
                 day_of_week=day_of_week,
                 start_time=override.start_time,
                 end_time=override.end_time,
-                slot_duration_minutes=override.slot_duration_minutes or 30,
+                slot_duration_minutes=APPOINTMENT_SLOT_MINUTES,
                 is_active=True,
                 created_at=override.created_at,
                 updated_at=override.updated_at,
@@ -218,7 +223,7 @@ async def get_doctor_availability(
     for sch in schedules:
         start_t = _parse_time(sch.start_time)
         end_t = _parse_time(sch.end_time)
-        duration = timedelta(minutes=sch.slot_duration_minutes)
+        duration = timedelta(minutes=APPOINTMENT_SLOT_MINUTES)
 
         curr_datetime = datetime.combine(req_date, start_t, tzinfo=timezone.utc)
         end_datetime = datetime.combine(req_date, end_t, tzinfo=timezone.utc)
@@ -249,4 +254,24 @@ async def get_doctor_availability(
         day_of_week=day_of_week,
         is_working_day=len(all_slots) > 0,
         slots=all_slots,
+    )
+
+
+async def get_doctor_monthly_availability(
+    db: AsyncSession, doctor_id: str, year: int, month: int
+) -> schedule_schema.MonthlyAvailabilityResponse:
+    if year < 2000 or year > 2100 or month < 1 or month > 12:
+        raise BadRequestException(detail="Invalid year or month.")
+
+    doctor = await doctor_repository.get_by_id(db, doctor_id)
+    if not doctor or not doctor.is_active:
+        raise NotFoundException(detail="Doctor not found or inactive")
+
+    days = []
+    for day in range(1, monthrange(year, month)[1] + 1):
+        date_str = f"{year:04d}-{month:02d}-{day:02d}"
+        days.append(await get_doctor_availability(db, doctor_id, date_str))
+
+    return schedule_schema.MonthlyAvailabilityResponse(
+        doctor_id=doctor_id, year=year, month=month, days=days
     )

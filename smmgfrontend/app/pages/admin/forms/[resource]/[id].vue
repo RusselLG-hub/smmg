@@ -40,7 +40,7 @@ const successMsg = ref<string | null>(null)
 const form = reactive({
   name: '', email: '', password: '', title: '', specialty_id: '', phone: '', bio: '',
   description: '', image_url: '', is_active: true, doctor_profile_id: '', day_of_week: 0,
-  start_time: '08:00', end_time: '17:00', slot_duration_minutes: 30,
+  start_time: '08:00', end_time: '17:00',
 })
 
 const copy = computed(() => {
@@ -49,7 +49,7 @@ const copy = computed(() => {
     staff: ['Add Staff Account', 'Create an account for a clinic staff member.'],
     specialties: [isEditing.value ? 'Edit Medical Specialty' : 'Add Medical Specialty', 'Maintain the specialty name, description, and visibility.'],
     services: [isEditing.value ? 'Edit Clinic Service' : 'Add Clinic Service', 'Maintain the service details, specialty, image, and visibility.'],
-    schedules: [isEditing.value ? 'Edit Working Schedule' : 'Add Working Schedule', 'Configure recurring doctor availability and appointment slot duration.'],
+    schedules: [isEditing.value ? 'Edit Working Schedule' : 'Add Working Schedule', 'Configure recurring doctor availability. Appointments use the standard clinic interval.'],
   }
   return labels[resource.value]
 })
@@ -136,7 +136,7 @@ const handleSubmit = async () => {
     } else {
       const data = {
         day_of_week: Number(form.day_of_week), start_time: form.start_time, end_time: form.end_time,
-        slot_duration_minutes: Number(form.slot_duration_minutes), is_active: form.is_active,
+        is_active: form.is_active,
       }
       if (isEditing.value) await schedulesStore.updateSchedule(recordId.value, data)
       else await schedulesStore.createSchedule({ doctor_profile_id: form.doctor_profile_id, ...data })
@@ -203,7 +203,6 @@ const handleSubmit = async () => {
         <div v-else class="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div v-if="!isEditing" class="sm:col-span-2"><label class="form-label">Doctor</label><select v-model="form.doctor_profile_id" required class="form-input"><option value="" disabled>Select a doctor</option><option v-for="doctor in doctorsStore.doctors" :key="doctor.id" :value="doctor.id">Dr. {{ doctor.user.name }}</option></select></div>
           <div><label class="form-label">Weekday</label><select v-model="form.day_of_week" class="form-input"><option v-for="(day, index) in WEEKDAYS" :key="day" :value="index">{{ day }}</option></select></div>
-          <div><label class="form-label">Slot Duration</label><select v-model="form.slot_duration_minutes" class="form-input"><option v-for="minutes in [15, 20, 30, 45, 60]" :key="minutes" :value="minutes">{{ minutes }} minutes</option></select></div>
           <div><label class="form-label">Start Time</label><input v-model="form.start_time" type="time" required class="form-input" /></div>
           <div><label class="form-label">End Time</label><input v-model="form.end_time" type="time" required class="form-input" /></div>
         </div>
