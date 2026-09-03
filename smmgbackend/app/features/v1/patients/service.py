@@ -31,7 +31,11 @@ async def update_patient_profile(
 ) -> patient_schema.PatientProfileRead:
     if data.name:
         current_user.name = data.name.strip()
+    if data.profile_image_url is not None:
+        current_user.profile_image_url = data.profile_image_url
+    if data.name or data.profile_image_url is not None:
         await db.commit()
 
     profile = await patient_repository.update(db, current_user.id, data)
     return patient_schema.PatientProfileRead.model_validate(profile)
+

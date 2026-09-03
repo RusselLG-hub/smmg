@@ -95,7 +95,9 @@ async def update_doctor(
         if existing_user:
             raise ConflictException(detail="Email is already registered")
         doctor.user.email = data.email.lower()
-    if data.name or data.email:
+    if data.profile_image_url is not None:
+        doctor.user.profile_image_url = data.profile_image_url
+    if data.name or data.email or data.profile_image_url is not None:
         await db.commit()
 
     updated = await doctor_repository.update(db, doctor_id, data)

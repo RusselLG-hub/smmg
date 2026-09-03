@@ -28,25 +28,37 @@ const profileImageUrl = useState<string | null>('patient-profile-image-url', () 
 
 const sidebarOpen = ref(false)
 
-onMounted(async () => {
-  if (authStore.user?.role === 'patient') {
+const loadProfileImage = async () => {
+  if (!authStore.user) {
+    profileImageUrl.value = null
+    return
+  }
+  if (authStore.user.role === 'patient') {
     try {
       const profile = await patientService.getMyProfile()
-      profileImageUrl.value = profile.profile_image_url || null
+      profileImageUrl.value = profile.profile_image_url || authStore.user?.profile_image_url || null
     } catch {
-      profileImageUrl.value = null
+      profileImageUrl.value = authStore.user?.profile_image_url || null
     }
-  } else if (authStore.user?.role === 'doctor') {
+  } else if (authStore.user.role === 'doctor') {
     try {
       const profile = await doctorsService.getMyProfile()
-      profileImageUrl.value = profile.profile_image_url || null
+      profileImageUrl.value = profile.profile_image_url || authStore.user?.profile_image_url || null
     } catch {
-      profileImageUrl.value = null
+      profileImageUrl.value = authStore.user?.profile_image_url || null
     }
   } else {
     profileImageUrl.value = authStore.user?.profile_image_url || null
   }
-})
+}
+
+watch(
+  () => [authStore.user?.id, authStore.user?.role, authStore.user?.profile_image_url],
+  () => {
+    loadProfileImage()
+  },
+  { immediate: true }
+)
 
 // Close mobile sidebar on route change
 watch(

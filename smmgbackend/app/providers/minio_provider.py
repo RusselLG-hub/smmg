@@ -49,8 +49,16 @@ def get_presigned_url(object_name: str, expires_hours: int = 1) -> str:
     )
 
 
+def get_file(object_name: str):
+    return minio_client.get_object(
+        bucket_name=settings.MINIO_BUCKET,
+        object_name=object_name,
+    )
+
+
 def delete_file(object_name: str) -> None:
     minio_client.remove_object(
         bucket_name=settings.MINIO_BUCKET,
         object_name=object_name,
     )
+

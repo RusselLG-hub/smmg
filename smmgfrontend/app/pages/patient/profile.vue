@@ -64,6 +64,9 @@ const handleImageUpload = async (event: Event) => {
     profile.value = updated
     form.profile_image_url = updated.profile_image_url || res.url
     profileImageUrl.value = form.profile_image_url
+    if (authStore.user) {
+      authStore.user.profile_image_url = form.profile_image_url
+    }
     successMsg.value = 'Profile photo uploaded and saved.'
   } catch (err: any) {
     errorMsg.value = err?.data?.detail || 'Failed to upload image'
@@ -95,6 +98,7 @@ const handleSave = async () => {
     profileImageUrl.value = updated.profile_image_url || null
     if (authStore.user) {
       authStore.user.name = form.name
+      authStore.user.profile_image_url = updated.profile_image_url || null
     }
     successMsg.value = 'Profile updated successfully'
   } catch (err: any) {
