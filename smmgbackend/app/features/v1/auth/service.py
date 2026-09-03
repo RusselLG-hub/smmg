@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
@@ -20,6 +22,8 @@ from app.features.v1.users import repository as user_repository
 from app.features.v1.users import schema as user_schema
 from app.providers import resend_provider
 
+logger = logging.getLogger(__name__)
+
 
 async def register(
     db: AsyncSession, register_data: auth_schema.RegisterRequest
@@ -28,10 +32,11 @@ async def register(
     if existing_user:
         if existing_user.is_email_verified:
             raise ConflictException(detail="Email is already registered")
-        if not verify_password(register_data.password, existing_user.hashed_password):
-            raise ConflictException(
-                detail="A pending account already exists for this email"
-            )
+        # Existing unverified user: update details and send a new verification code
+        existing_user.name = register_data.name.strip()
+        existing_user.hashed_password = hash_password(register_data.password)
+        await db.commit()
+        await db.refresh(existing_user)
         await send_verification_code(db, user=existing_user)
         return existing_user
 
@@ -45,7 +50,15 @@ async def register(
         db, user_create=user_create, hashed_password=hashed_pw, role="patient"
     )
 
-    await send_verification_code(db, user=user)
+    try:
+        await send_verification_code(db, user=user)
+    except Exception:
+        # If sending verification code fails, delete the newly created user
+        # so an orphaned, unverified account is not created in the database.
+        await db.delete(user)
+        await db.commit()
+        raise
+
     return user
 
 
@@ -61,6 +74,8 @@ async def send_verification_code(
     await auth_repository.create_verification_code(
         db, user_id=user.id, code_hash=code_hash, expires_minutes=15
     )
+
+    logger.info("Verification code generated for %s: %s", user.email, code)
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded-lg: 8px;">
@@ -169,6 +184,8 @@ async def request_password_change(
         expires_minutes=15,
         purpose="password_change",
     )
+
+    logger.info("Password change verification code generated for %s: %s", user.email, code)
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb;">

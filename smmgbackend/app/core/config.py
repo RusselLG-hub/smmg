@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = ""
     ADMIN_NAME: str = ""
 
+    # Environment
+    ENVIRONMENT: str = "development"
+
     # Frontend
     FRONTEND_URL: str = "http://localhost:3000"
     API_PUBLIC_URL: str = "http://localhost:8000"

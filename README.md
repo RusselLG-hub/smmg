@@ -12,7 +12,7 @@ SMMG is a role-based healthcare appointment management system with doctor discov
 - **Backend API:** [http://localhost:8000](http://localhost:8000)
 - **API documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
-All seeded doctor and staff accounts use the password `ChangeMe123!`.
+All seeded doctor, staff, and client accounts use the password `ChangeMe123!`.
 
 ### Administrator login
 
@@ -23,19 +23,21 @@ All seeded doctor and staff accounts use the password `ChangeMe123!`.
 
 The administrator password is deliberately not committed to this README. Share it with authorized client reviewers through a private channel or password manager, then rotate it after the prototype review.
 
-| Role | Name | Email | Specialty |
+| Role | Name | Email | Specialty / Notes |
 | --- | --- | --- | --- |
 | Doctor | Maria Santos | `maria.santos.doctor@example.com` | General Medicine |
 | Doctor | Gabriel Reyes | `gabriel.reyes.doctor@example.com` | Pediatrics |
 | Doctor | Isabella Cruz | `isabella.cruz.doctor@example.com` | Cardiology |
 | Doctor | Miguel Garcia | `miguel.garcia.doctor@example.com` | Dermatology |
 | Doctor | Sofia Mendoza | `sofia.mendoza.doctor@example.com` | Obstetrics and Gynecology |
-| Staff | Angela Flores | `angela.flores.staff@example.com` | Not applicable |
-| Staff | Paolo Navarro | `paolo.navarro.staff@example.com` | Not applicable |
+| Staff | Angela Flores | `angela.flores.staff@example.com` | Clinic Operations |
+| Staff | Paolo Navarro | `paolo.navarro.staff@example.com` | Clinic Operations |
+| Patient / Client | Juan Dela Cruz | `juan.delacruz.patient@example.com` | Demo Patient Account |
+| Patient / Client | Maria Clara | `maria.clara.patient@example.com` | Demo Patient Account |
 
-The administrator account is created from the configured `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` values. Patient accounts are created from the registration page.
+The administrator account is created from the configured `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` values. Seeded doctor, staff, and client/patient accounts are initialized with the password `ChangeMe123!`. Additional patient accounts can also be created from the registration page.
 
-The backend startup process creates the administrator, five doctors, two staff accounts, five specialties, and five services. The seed scripts are idempotent, so existing records are not duplicated and user-changed passwords are not overwritten.
+The backend startup process creates the administrator, five doctors, two staff accounts, two client/patient accounts, five specialties, and five services. The seed scripts are idempotent, so existing records are not duplicated and user-changed passwords are not overwritten.
 
 ### MinIO dashboard
 

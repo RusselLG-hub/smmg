@@ -3,6 +3,8 @@ import asyncio
 from app.core.security import hash_password
 from app.db.session import async_session
 from app.features.v1.doctors import repository as doctor_repository
+from app.features.v1.patients import repository as patient_repository
+from app.features.v1.patients.schema import PatientProfileUpdate
 from app.features.v1.specialties import repository as specialty_repository
 from app.features.v1.users import model as user_model
 from app.features.v1.users import repository as user_repository
@@ -73,6 +75,29 @@ STAFF = [
         "email": "paolo.navarro.staff@example.com",
         "legacy_email": "paolo.navarro.staff@smmg.local",
         "password": "ChangeMe123!",
+    },
+]
+
+PATIENTS = [
+    {
+        "name": "Juan Dela Cruz",
+        "email": "juan.delacruz.patient@example.com",
+        "legacy_email": "juan.delacruz.patient@smmg.local",
+        "password": "ChangeMe123!",
+        "phone": "+639171000201",
+        "gender": "Male",
+        "date_of_birth": "1992-05-14",
+        "address": "123 Mabini St, Manila",
+    },
+    {
+        "name": "Maria Clara",
+        "email": "maria.clara.patient@example.com",
+        "legacy_email": "maria.clara.patient@smmg.local",
+        "password": "ChangeMe123!",
+        "phone": "+639171000202",
+        "gender": "Female",
+        "date_of_birth": "1995-10-24",
+        "address": "456 Rizal Ave, Quezon City",
     },
 ]
 
@@ -171,9 +196,37 @@ async def seed_workforce() -> None:
             if created:
                 created_staff += 1
 
+        created_patients = 0
+        for item in PATIENTS:
+            if len(item["password"]) < 8:
+                raise RuntimeError(f"Seed password for {item['email']} is too short.")
+
+            user, user_created = await _create_user_if_missing(
+                db,
+                name=item["name"],
+                email=item["email"],
+                legacy_email=item["legacy_email"],
+                role="patient",
+                password_hash=hash_password(item["password"]),
+            )
+            profile = await patient_repository.get_by_user_id(db, user.id)
+            if not profile:
+                await patient_repository.update(
+                    db,
+                    user_id=user.id,
+                    data=PatientProfileUpdate(
+                        phone=item["phone"],
+                        gender=item["gender"],
+                        date_of_birth=item["date_of_birth"],
+                        address=item["address"],
+                    ),
+                )
+            if user_created:
+                created_patients += 1
+
     print(
-        f"Workforce seed complete: {created_doctors} doctors and "
-        f"{created_staff} staff accounts created."
+        f"Workforce & client seed complete: {created_doctors} doctors, "
+        f"{created_staff} staff, and {created_patients} client accounts created."
     )
 
 

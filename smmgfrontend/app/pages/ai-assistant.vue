@@ -216,6 +216,26 @@ const formatMessageContent = (content: string) => {
           </button>
         </div>
 
+        <!-- Error Alert Banner -->
+        <div
+          v-if="aiStore.error"
+          class="mx-6 mt-3 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700 shrink-0"
+          role="alert"
+        >
+          <div class="flex items-center gap-2">
+            <LucideAlertCircle class="h-4 w-4 shrink-0 text-red-500" />
+            <span>{{ aiStore.error }}</span>
+          </div>
+          <button
+            type="button"
+            class="text-red-500 hover:text-red-700"
+            aria-label="Dismiss error"
+            @click="aiStore.error = null"
+          >
+            <LucideX class="h-4 w-4" />
+          </button>
+        </div>
+
         <!-- Chat Messages Container -->
         <div ref="chatContainer" class="flex-1 overflow-y-auto p-6 space-y-6">
           <div v-if="aiStore.loading" class="flex justify-center py-12">

@@ -10,6 +10,8 @@ const authService = useAuthService()
 const step = ref<1 | 2>(1)
 const sending = ref(false)
 const submitting = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 const successMsg = ref<string | null>(null)
 const errorMsg = ref<string | null>(null)
 const form = reactive({
@@ -24,7 +26,40 @@ const maskedEmail = computed(() => {
   return `${local.slice(0, 2)}${'*'.repeat(Math.max(2, local.length - 2))}@${domain}`
 })
 
-const getError = (err: any, fallback: string) => err?.data?.detail || err?.message || fallback
+const passwordRequirements = computed(() => [
+  { id: 'minChar', label: 'At least 8 characters', met: form.newPassword.length >= 8 },
+  { id: 'upper', label: '1 uppercase letter (A-Z)', met: /[A-Z]/.test(form.newPassword) },
+  { id: 'lower', label: '1 lowercase letter (a-z)', met: /[a-z]/.test(form.newPassword) },
+  { id: 'number', label: '1 number (0-9)', met: /\d/.test(form.newPassword) },
+  { id: 'special', label: '1 special character (!@#$%^&*)', met: /[^A-Za-z0-9]/.test(form.newPassword) },
+])
+
+const metCount = computed(() => passwordRequirements.value.filter((r) => r.met).length)
+const allRequirementsMet = computed(() => metCount.value === passwordRequirements.value.length)
+
+const strengthLabel = computed(() => {
+  if (metCount.value === 0) return ''
+  if (metCount.value <= 2) return 'Weak'
+  if (metCount.value <= 4) return 'Moderate'
+  return 'Strong'
+})
+
+const strengthColor = computed(() => {
+  if (metCount.value <= 2) return 'bg-red-500'
+  if (metCount.value <= 4) return 'bg-amber-500'
+  return 'bg-emerald-500'
+})
+
+const passwordsMatch = computed(() =>
+  form.confirmPassword.length > 0 && form.newPassword === form.confirmPassword
+)
+
+const getError = (err: any, fallback: string) => {
+  if (Array.isArray(err?.data?.detail)) {
+    return err.data.detail.map((d: any) => d.msg.replace(/^Value error,\s*/i, '')).join(', ')
+  }
+  return err?.data?.detail || err?.message || fallback
+}
 
 const sendCode = async () => {
   sending.value = true
@@ -48,8 +83,8 @@ const submitPassword = async () => {
     errorMsg.value = 'Enter the 6-digit verification code.'
     return
   }
-  if (form.newPassword.length < 8) {
-    errorMsg.value = 'New password must be at least 8 characters.'
+  if (!allRequirementsMet.value) {
+    errorMsg.value = 'New password must meet all security requirements.'
     return
   }
   if (form.newPassword !== form.confirmPassword) {
@@ -106,14 +141,126 @@ const submitPassword = async () => {
         <label class="form-label mb-1" for="password-code">6-digit verification code</label>
         <input id="password-code" v-model.trim="form.code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required class="form-input w-full sm:max-w-xs" placeholder="123456" />
       </div>
-      <div class="grid gap-4 sm:grid-cols-2">
+      <div class="space-y-4">
         <div>
           <label class="form-label mb-1" for="new-password">New password</label>
-          <input id="new-password" v-model="form.newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required class="form-input w-full" />
+          <div class="relative">
+            <input
+              id="new-password"
+              v-model="form.newPassword"
+              :type="showNewPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              maxlength="128"
+              required
+              class="form-input w-full pr-10"
+              placeholder="Create a strong password"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              aria-label="Toggle password visibility"
+              @click="showNewPassword = !showNewPassword"
+            >
+              <LucideEyeOff v-if="showNewPassword" class="h-4 w-4" />
+              <LucideEye v-else class="h-4 w-4" />
+            </button>
+          </div>
+
+          <!-- Password Strength Bar -->
+          <div v-if="form.newPassword" class="mt-2 space-y-1">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-500 font-medium">Strength:</span>
+              <span
+                class="font-semibold"
+                :class="{
+                  'text-red-600': metCount <= 2,
+                  'text-amber-600': metCount > 2 && metCount < 5,
+                  'text-emerald-600': metCount === 5,
+                }"
+              >
+                {{ strengthLabel }}
+              </span>
+            </div>
+            <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden flex gap-1">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="h-full flex-1 rounded-full transition-all duration-300"
+                :class="i <= metCount ? strengthColor : 'bg-gray-200'"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Password Requirements Checklist Display -->
+          <div class="mt-2.5 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs">
+            <p class="font-semibold text-gray-700 mb-2 flex items-center justify-between">
+              <span>Password must contain:</span>
+              <span v-if="allRequirementsMet" class="text-emerald-600 font-bold flex items-center gap-1">
+                <LucideCheckCircle2 class="h-3.5 w-3.5" /> All criteria met
+              </span>
+            </p>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <li
+                v-for="req in passwordRequirements"
+                :key="req.id"
+                class="flex items-center gap-1.5 transition-colors duration-200"
+                :class="req.met ? 'text-emerald-700 font-medium' : 'text-gray-500'"
+              >
+                <LucideCheckCircle2
+                  v-if="req.met"
+                  class="h-4 w-4 text-emerald-600 shrink-0"
+                />
+                <span
+                  v-else
+                  class="h-4 w-4 flex items-center justify-center shrink-0 text-gray-300 font-bold text-xs"
+                >
+                  ○
+                </span>
+                <span>{{ req.label }}</span>
+              </li>
+            </ul>
+          </div>
         </div>
+
         <div>
           <label class="form-label mb-1" for="confirm-password">Confirm new password</label>
-          <input id="confirm-password" v-model="form.confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required class="form-input w-full" />
+          <div class="relative">
+            <input
+              id="confirm-password"
+              v-model="form.confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              maxlength="128"
+              required
+              class="form-input w-full pr-10"
+              placeholder="Repeat your new password"
+              :class="{
+                'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500': passwordsMatch,
+                'border-red-500 focus:border-red-500 focus:ring-red-500': form.confirmPassword && !passwordsMatch
+              }"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              aria-label="Toggle confirm password visibility"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <LucideEyeOff v-if="showConfirmPassword" class="h-4 w-4" />
+              <LucideEye v-else class="h-4 w-4" />
+            </button>
+          </div>
+
+          <!-- Password Match Feedback -->
+          <div v-if="form.confirmPassword" class="mt-1.5 text-xs flex items-center gap-1.5">
+            <template v-if="passwordsMatch">
+              <LucideCheckCircle2 class="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span class="text-emerald-700 font-medium">Passwords match</span>
+            </template>
+            <template v-else>
+              <LucideAlertCircle class="h-3.5 w-3.5 text-red-500 shrink-0" />
+              <span class="text-red-600">Passwords do not match</span>
+            </template>
+          </div>
         </div>
       </div>
       <div class="flex flex-wrap gap-3">
