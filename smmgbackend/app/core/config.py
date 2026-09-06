@@ -36,9 +36,11 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "smmg"
     MINIO_SECURE: bool = False
 
-    # Resend
+    # Brevo
+    BREVO_API_KEY: str = ""
     RESEND_API_KEY: str = ""
-    EMAIL_FROM: str = ""
+    EMAIL_FROM: str = "noreply@smmg.site"
+    EMAIL_FROM_NAME: str = "SMMG"
 
     # AI Configuration
     AI_GOOGLE_API_KEY: str = ""

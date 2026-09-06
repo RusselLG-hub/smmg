@@ -14,7 +14,7 @@ This folder contains the maintained system documentation and diagrams for the cu
 
 ## System summary
 
-SMMG is a role-based healthcare appointment management system for patients, doctors, staff, and administrators. The Nuxt application communicates directly with a FastAPI backend that applies JWT authentication and role authorization, persists healthcare scheduling data in PostgreSQL, stores images in MinIO, sends account and appointment emails through Resend, and accesses an external AI provider through a backend abstraction.
+SMMG is a role-based healthcare appointment management system for patients, doctors, staff, and administrators. The Nuxt application communicates directly with a FastAPI backend that applies JWT authentication and role authorization, persists healthcare scheduling data in PostgreSQL, stores images in MinIO, sends account and appointment emails through Brevo, and accesses an external AI provider through a backend abstraction.
 
 Patients can browse doctors, specialties, and services; manage their profile; book, reschedule, and cancel appointments; and use the health and first-aid assistant. Doctors manage their profile and view assigned appointments, schedules, and personal reports. Staff coordinate appointment operations, while administrators manage users, doctors, staff, catalog records, schedules, reports, and AI conversation monitoring.
 

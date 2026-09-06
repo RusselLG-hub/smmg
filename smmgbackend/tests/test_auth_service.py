@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 from app.core.exceptions import ConflictException, ServiceUnavailableException
 from app.features.v1.auth import schema as auth_schema
 from app.features.v1.auth import service as auth_service
-from app.providers import resend_provider
+from app.providers import brevo_provider, resend_provider
 
 
 class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
@@ -136,52 +136,56 @@ class PasswordStrengthValidationTests(unittest.TestCase):
         self.assertEqual(req.password, "StrongPassword123!")
 
 
-class ResendProviderTests(unittest.TestCase):
+class BrevoProviderTests(unittest.TestCase):
     def test_placeholder_key_detection(self):
-        self.assertTrue(resend_provider._is_placeholder_api_key(None))
-        self.assertTrue(resend_provider._is_placeholder_api_key(""))
-        self.assertTrue(resend_provider._is_placeholder_api_key("your_resend_api_key"))
-        self.assertTrue(resend_provider._is_placeholder_api_key("your_api_key_here"))
-        self.assertTrue(resend_provider._is_placeholder_api_key("dummy"))
-        self.assertTrue(resend_provider._is_placeholder_api_key("mock"))
-        self.assertFalse(resend_provider._is_placeholder_api_key("re_1234567890abcdef"))
+        self.assertTrue(brevo_provider._is_placeholder_api_key(None))
+        self.assertTrue(brevo_provider._is_placeholder_api_key(""))
+        self.assertTrue(brevo_provider._is_placeholder_api_key("your_brevo_api_key"))
+        self.assertTrue(brevo_provider._is_placeholder_api_key("your_resend_api_key"))
+        self.assertTrue(brevo_provider._is_placeholder_api_key("your_api_key_here"))
+        self.assertTrue(brevo_provider._is_placeholder_api_key("dummy"))
+        self.assertTrue(brevo_provider._is_placeholder_api_key("mock"))
+        self.assertFalse(brevo_provider._is_placeholder_api_key("re_1234567890abcdef"))
 
     def test_send_email_simulates_in_dev_with_placeholder_key(self):
-        with patch.object(resend_provider.settings, "RESEND_API_KEY", "your_resend_api_key"):
-            result = resend_provider.send_email(
+        with patch.object(brevo_provider.settings, "BREVO_API_KEY", "your_brevo_api_key"):
+            result = brevo_provider.send_email(
                 to="test@example.com",
                 subject="Test Subject",
                 html="<p>Test</p>",
             )
         self.assertEqual(result.get("status"), "simulated")
 
-    def test_send_email_simulates_in_dev_when_resend_throws(self):
+    def test_send_email_simulates_in_dev_when_brevo_throws(self):
         with (
-            patch.object(resend_provider.settings, "RESEND_API_KEY", "re_test_key"),
-            patch.object(resend_provider.settings, "EMAIL_FROM", "noreply@example.com"),
-            patch.object(resend_provider.settings, "ENVIRONMENT", "development"),
-            patch("resend.Emails.send", side_effect=Exception("API key invalid")),
+            patch.object(brevo_provider.settings, "BREVO_API_KEY", "re_test_key"),
+            patch.object(brevo_provider.settings, "EMAIL_FROM", "noreply@smmg.site"),
+            patch.object(brevo_provider.settings, "ENVIRONMENT", "development"),
+            patch("urllib.request.urlopen", side_effect=Exception("API key invalid")),
         ):
-            result = resend_provider.send_email(
+            result = brevo_provider.send_email(
                 to="test@example.com",
                 subject="Test Subject",
                 html="<p>Test</p>",
             )
         self.assertEqual(result.get("status"), "simulated")
 
-    def test_send_email_raises_in_production_when_resend_throws(self):
+    def test_send_email_raises_in_production_when_brevo_throws(self):
         with (
-            patch.object(resend_provider.settings, "RESEND_API_KEY", "re_real_key_123"),
-            patch.object(resend_provider.settings, "EMAIL_FROM", "noreply@example.com"),
-            patch.object(resend_provider.settings, "ENVIRONMENT", "production"),
-            patch("resend.Emails.send", side_effect=Exception("Connection refused")),
+            patch.object(brevo_provider.settings, "BREVO_API_KEY", "re_real_key_123"),
+            patch.object(brevo_provider.settings, "EMAIL_FROM", "noreply@smmg.site"),
+            patch.object(brevo_provider.settings, "ENVIRONMENT", "production"),
+            patch("urllib.request.urlopen", side_effect=Exception("Connection refused")),
         ):
-            with self.assertRaises(resend_provider.EmailProviderError):
-                resend_provider.send_email(
+            with self.assertRaises(brevo_provider.EmailProviderError):
+                brevo_provider.send_email(
                     to="test@example.com",
                     subject="Test Subject",
                     html="<p>Test</p>",
                 )
+
+
+ResendProviderTests = BrevoProviderTests
 
 
 if __name__ == "__main__":
