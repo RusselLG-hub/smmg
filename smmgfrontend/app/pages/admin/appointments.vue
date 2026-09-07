@@ -11,6 +11,7 @@ definePageMeta({
 const appointmentsStore = useAppointmentsStore()
 const doctorsStore = useDoctorsStore()
 
+const todayStr = new Date().toISOString().split('T')[0]
 const filterDoctorId = ref<string>('')
 const filterStatus = ref<string>('')
 const filterDate = ref<string>('')
@@ -71,13 +72,13 @@ const formatTime = (isoStr: string) => {
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <BasePageHeader
-      title="Admin Appointments Management"
-      description="Master appointment directory and clinic status controls"
+      title="Clinic Appointments Directory"
+      description="All clinic bookings and consultations with flexible doctor, status, and date filters"
     >
       <template #actions>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full text-left">
           <div>
-            <label class="form-label mb-1">Doctor</label>
+            <label class="form-label mb-1 text-xs">Doctor</label>
             <select v-model="filterDoctorId" class="form-input w-full text-xs">
               <option value="">All Doctors</option>
               <option v-for="d in doctorsStore.doctors" :key="d.id" :value="d.id">Dr. {{ d.user.name }}</option>
@@ -85,7 +86,7 @@ const formatTime = (isoStr: string) => {
           </div>
 
           <div>
-            <label class="form-label mb-1">Status</label>
+            <label class="form-label mb-1 text-xs">Status</label>
             <select v-model="filterStatus" class="form-input w-full text-xs">
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
@@ -96,12 +97,61 @@ const formatTime = (isoStr: string) => {
           </div>
 
           <div>
-            <label class="form-label mb-1">Date</label>
-            <input v-model="filterDate" type="date" class="form-input w-full text-xs" />
+            <div class="flex items-center justify-between mb-1">
+              <label class="form-label mb-0 text-xs">Filter Date</label>
+              <button
+                v-if="filterDate"
+                type="button"
+                class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline"
+                @click="filterDate = ''"
+              >
+                Clear (All Dates)
+              </button>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <input v-model="filterDate" type="date" class="form-input w-full text-xs" />
+              <button
+                type="button"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
+                :class="filterDate === todayStr ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                @click="filterDate = (filterDate === todayStr ? '' : todayStr)"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
+                :class="!filterDate ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                @click="filterDate = ''"
+              >
+                All
+              </button>
+            </div>
           </div>
         </div>
       </template>
     </BasePageHeader>
+
+    <!-- Active Filter Badges -->
+    <div v-if="filterDoctorId || filterStatus || filterDate" class="mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+      <span class="font-medium">Active filters:</span>
+      <span v-if="filterDate" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
+        <LucideCalendar class="h-3 w-3" />
+        Date: {{ filterDate === todayStr ? 'Today' : filterDate }}
+        <button class="hover:text-primary-900 ml-1 font-bold" @click="filterDate = ''">&times;</button>
+      </span>
+      <span v-if="filterDoctorId" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-300">
+        Doctor: Dr. {{ doctorsStore.doctors.find(d => d.id === filterDoctorId)?.user.name || 'Selected' }}
+        <button class="hover:text-gray-900 ml-1 font-bold" @click="filterDoctorId = ''">&times;</button>
+      </span>
+      <span v-if="filterStatus" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-300">
+        Status: {{ filterStatus }}
+        <button class="hover:text-gray-900 ml-1 font-bold" @click="filterStatus = ''">&times;</button>
+      </span>
+      <button class="text-primary-600 hover:underline font-medium text-xs ml-1" @click="filterDoctorId = ''; filterStatus = ''; filterDate = ''">
+        Reset all filters
+      </button>
+    </div>
 
     <!-- Alert Notifications -->
     <div v-if="actionSuccess" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
@@ -128,11 +178,20 @@ const formatTime = (isoStr: string) => {
     <!-- Empty State -->
     <BaseEmptyState
       v-else-if="appointmentsStore.adminAppointments.length === 0"
-      title="No Appointments Found"
-      description="There are no appointments matching your filter selection."
+      :title="filterDoctorId || filterStatus || filterDate ? 'No Appointments Match Filter' : 'No Appointments Found'"
+      :description="filterDoctorId || filterStatus || filterDate ? 'No bookings found for the selected filter combination. Try clearing your filters.' : 'There are no patient appointments booked yet.'"
     >
       <template #icon>
         <LucideCalendarX class="h-10 w-10 text-gray-400" />
+      </template>
+      <template #actions>
+        <button
+          v-if="filterDoctorId || filterStatus || filterDate"
+          class="btn-primary mt-4 text-xs"
+          @click="filterDoctorId = ''; filterStatus = ''; filterDate = ''"
+        >
+          Show All Appointments
+        </button>
       </template>
     </BaseEmptyState>
 
@@ -160,7 +219,15 @@ const formatTime = (isoStr: string) => {
               <div v-if="appt.doctor.specialty" class="text-xs text-teal-600 font-medium">{{ appt.doctor.specialty.name }}</div>
             </td>
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-              <div>{{ formatDate(appt.scheduled_at) }}</div>
+              <div class="flex items-center gap-1.5">
+                <span>{{ formatDate(appt.scheduled_at) }}</span>
+                <span
+                  v-if="appt.scheduled_at.startsWith(todayStr)"
+                  class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-green-100 text-green-700"
+                >
+                  Today
+                </span>
+              </div>
               <div class="font-mono text-xs text-gray-500">{{ formatTime(appt.scheduled_at) }}</div>
             </td>
             <td class="px-4 py-3">

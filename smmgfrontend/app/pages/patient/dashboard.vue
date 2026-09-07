@@ -163,11 +163,20 @@ const formatTime = (isoStr: string) => {
             </div>
 
             <NuxtLink
-              to="/patient/appointments"
+              :to="`/patient/appointments/${dashboardStore.patientSummary.upcoming_appointment.id}`"
               class="inline-block text-xs font-semibold text-primary-700 hover:underline"
             >
-              Manage Appointment &rarr;
+              Track Live Progress & Details &rarr;
             </NuxtLink>
+          </div>
+
+          <!-- Progress Stepper on Dashboard Card -->
+          <div class="w-full pt-3 border-t border-primary-200/60">
+            <FeaturesAppointmentsBookingProgressTracker
+              :appointment="dashboardStore.patientSummary.upcoming_appointment"
+              :compact="true"
+              :show-logic-details="false"
+            />
           </div>
         </div>
       </div>

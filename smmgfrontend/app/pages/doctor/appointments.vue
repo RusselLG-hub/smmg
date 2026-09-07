@@ -10,14 +10,14 @@ definePageMeta({
 const appointmentsStore = useAppointmentsStore()
 
 const todayStr = new Date().toISOString().split('T')[0]
-const selectedDate = ref<string>(todayStr)
+const selectedDate = ref<string>('')
 const selectedStatus = ref<string>('')
 const actionSuccess = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const selectedPatientAppointment = ref<Appointment | null>(null)
 
 onMounted(async () => {
-  await appointmentsStore.fetchDoctorAppointments(selectedDate.value, selectedStatus.value || undefined)
+  await appointmentsStore.fetchDoctorAppointments(selectedDate.value || undefined, selectedStatus.value || undefined)
 })
 
 watch([selectedDate, selectedStatus], async () => {
@@ -59,21 +59,49 @@ const formatTime = (isoStr: string) => {
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <BasePageHeader
       title="Doctor Consultations"
-      description="View patient schedule and update consultation status"
+      description="View full patient schedule and manage consultation status"
     >
       <template #actions>
-        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto text-left">
-          <div class="w-full sm:w-44">
-            <label class="form-label mb-1">Filter Date</label>
-            <input
-              v-model="selectedDate"
-              type="date"
-              class="form-input w-full text-xs"
-            />
+        <div class="flex flex-col sm:flex-row items-end gap-3 w-full sm:w-auto text-left">
+          <div class="w-full sm:w-auto">
+            <div class="flex items-center justify-between mb-1">
+              <label class="form-label mb-0 text-xs">Filter Date</label>
+              <button
+                v-if="selectedDate"
+                type="button"
+                class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline"
+                @click="selectedDate = ''"
+              >
+                Clear (Show All)
+              </button>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <input
+                v-model="selectedDate"
+                type="date"
+                class="form-input w-full sm:w-44 text-xs"
+              />
+              <button
+                type="button"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
+                :class="selectedDate === todayStr ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                @click="selectedDate = (selectedDate === todayStr ? '' : todayStr)"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
+                :class="!selectedDate ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+                @click="selectedDate = ''"
+              >
+                All Dates
+              </button>
+            </div>
           </div>
 
           <div class="w-full sm:w-40">
-            <label class="form-label mb-1">Status</label>
+            <label class="form-label mb-1 text-xs">Status</label>
             <select v-model="selectedStatus" class="form-input w-full text-xs">
               <option value="">All Statuses</option>
               <option value="confirmed">Confirmed</option>
@@ -85,6 +113,23 @@ const formatTime = (isoStr: string) => {
         </div>
       </template>
     </BasePageHeader>
+
+    <!-- Active Filter Badges -->
+    <div v-if="selectedDate || selectedStatus" class="mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+      <span class="font-medium">Active filters:</span>
+      <span v-if="selectedDate" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
+        <LucideCalendar class="h-3 w-3" />
+        Date: {{ selectedDate === todayStr ? 'Today' : selectedDate }}
+        <button class="hover:text-primary-900 ml-1 font-bold" @click="selectedDate = ''">&times;</button>
+      </span>
+      <span v-if="selectedStatus" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-300">
+        Status: {{ selectedStatus }}
+        <button class="hover:text-gray-900 ml-1 font-bold" @click="selectedStatus = ''">&times;</button>
+      </span>
+      <button class="text-primary-600 hover:underline font-medium text-xs ml-1" @click="selectedDate = ''; selectedStatus = ''">
+        Reset all filters
+      </button>
+    </div>
 
     <!-- Alert Notifications -->
     <div v-if="actionSuccess" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
@@ -111,11 +156,20 @@ const formatTime = (isoStr: string) => {
     <!-- Empty State -->
     <BaseEmptyState
       v-else-if="appointmentsStore.doctorAppointments.length === 0"
-      title="No Consultations Scheduled"
-      description="There are no appointments matching your filter criteria."
+      :title="selectedDate || selectedStatus ? 'No Consultations Match Filter' : 'No Consultations Scheduled'"
+      :description="selectedDate || selectedStatus ? 'There are no appointments matching your selected filter. Try clearing the filter to view all bookings.' : 'You do not have any patient consultations booked yet.'"
     >
       <template #icon>
         <LucideCalendarX class="h-10 w-10 text-gray-400" />
+      </template>
+      <template #actions>
+        <button
+          v-if="selectedDate || selectedStatus"
+          class="btn-primary mt-4 text-xs"
+          @click="selectedDate = ''; selectedStatus = ''"
+        >
+          Show All Consultations
+        </button>
       </template>
     </BaseEmptyState>
 
@@ -139,7 +193,15 @@ const formatTime = (isoStr: string) => {
               <div class="text-xs text-gray-500">{{ appt.patient.user.email }}</div>
             </td>
             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-              <div>{{ formatDate(appt.scheduled_at) }}</div>
+              <div class="flex items-center gap-1.5">
+                <span>{{ formatDate(appt.scheduled_at) }}</span>
+                <span
+                  v-if="appt.scheduled_at.startsWith(todayStr)"
+                  class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-green-100 text-green-700"
+                >
+                  Today
+                </span>
+              </div>
               <div class="font-mono text-xs text-gray-500">{{ formatTime(appt.scheduled_at) }}</div>
             </td>
             <td class="px-4 py-3 max-w-xs truncate">
@@ -152,6 +214,13 @@ const formatTime = (isoStr: string) => {
             <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
               <button class="px-2.5 py-1 text-xs font-medium text-primary-700 hover:underline" @click="selectedPatientAppointment = appt">Patient Info</button>
               <button
+                v-if="appt.status === 'pending'"
+                class="px-2.5 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700"
+                @click="handleUpdateStatus(appt.id, 'confirmed')"
+              >
+                Confirm
+              </button>
+              <button
                 v-if="appt.status === 'confirmed'"
                 class="px-2.5 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700"
                 @click="handleUpdateStatus(appt.id, 'completed')"
@@ -159,7 +228,7 @@ const formatTime = (isoStr: string) => {
                 Mark Completed
               </button>
               <button
-                v-if="appt.status === 'confirmed'"
+                v-if="appt.status === 'confirmed' || appt.status === 'pending'"
                 class="px-2.5 py-1 border border-red-200 text-red-600 rounded text-xs font-medium hover:bg-red-50"
                 @click="handleUpdateStatus(appt.id, 'cancelled')"
               >

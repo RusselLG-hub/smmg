@@ -115,6 +115,21 @@ class AppointmentBusinessRuleTests(unittest.IsolatedAsyncioTestCase):
                     AsyncMock(), user("staff"), "appointment-1", schema.AppointmentStatusUpdate(status="completed")
                 )
 
+    async def test_assigned_doctor_can_confirm_pending(self):
+        appt = appointment("pending")
+        updated = appointment("confirmed")
+        with (
+            patch.object(service.appointment_repository, "get_by_id", AsyncMock(return_value=appt)),
+            patch.object(service.doctor_repository, "get_by_user_id", AsyncMock(return_value=SimpleNamespace(id="doctor-1"))),
+            patch.object(service.appointment_repository, "update_status", AsyncMock(return_value=updated)) as update,
+            patch.object(service.notification_service, "send_status_confirmed_notification"),
+            patch.object(service.appointment_schema.AppointmentRead, "model_validate", return_value=updated),
+        ):
+            await service.update_appointment_status(
+                AsyncMock(), user("doctor"), appt.id, schema.AppointmentStatusUpdate(status="confirmed")
+            )
+        self.assertEqual(update.await_args.args[2], "confirmed")
+
     async def test_assigned_doctor_can_complete_confirmed(self):
         appt = appointment("confirmed")
         updated = appointment("completed")

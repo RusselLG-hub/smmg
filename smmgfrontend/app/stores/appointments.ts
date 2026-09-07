@@ -72,6 +72,22 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     }
   }
 
+  const fetchAppointmentDetails = async (id: string) => {
+    loading.value = true
+    error.value = null
+    try {
+      const details = await appointmentsService.getAppointmentDetails(id)
+      currentAppointment.value = details
+      _updateInStore(details)
+      return details
+    } catch (err: any) {
+      error.value = err?.data?.detail || 'Failed to fetch appointment details'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const cancelAppointment = async (id: string, reason?: string) => {
     loading.value = true
     error.value = null
@@ -143,6 +159,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     fetchMyAppointments,
     fetchDoctorAppointments,
     fetchAdminAppointments,
+    fetchAppointmentDetails,
     cancelAppointment,
     rescheduleAppointment,
     updateStatus,

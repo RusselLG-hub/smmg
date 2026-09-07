@@ -12,11 +12,16 @@ const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()
 const appointmentsStore = useAppointmentsStore()
 
+const todayStr = new Date().toISOString().split('T')[0]
+const activeTab = ref<'all' | 'today'>('all')
 const actionSuccess = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 
 onMounted(async () => {
-  await dashboardStore.fetchStaffDashboard()
+  await Promise.all([
+    dashboardStore.fetchStaffDashboard(),
+    appointmentsStore.fetchAdminAppointments(),
+  ])
 })
 
 const handleUpdateStatus = async (id: string, newStatus: string) => {
@@ -25,10 +30,22 @@ const handleUpdateStatus = async (id: string, newStatus: string) => {
   try {
     await appointmentsStore.updateStatus(id, newStatus)
     actionSuccess.value = `Status updated to ${newStatus}.`
-    await dashboardStore.fetchStaffDashboard()
+    await Promise.all([
+      dashboardStore.fetchStaffDashboard(),
+      appointmentsStore.fetchAdminAppointments(),
+    ])
   } catch (err: any) {
     actionError.value = err?.data?.detail || 'Failed to update status.'
   }
+}
+
+const formatDate = (isoStr: string) => {
+  const d = new Date(isoStr)
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 const formatTime = (isoStr: string) => {
@@ -113,62 +130,167 @@ const formatTime = (isoStr: string) => {
         </div>
       </div>
 
-      <!-- Today's Master List -->
+      <!-- Clinic Master Bookings & Consultations List -->
       <div class="card p-6 space-y-4">
-        <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <LucideClipboardCheck class="h-5 w-5 text-blue-600" />
-            <span>Today's Clinic Appointments</span>
-          </h2>
-          <NuxtLink to="/admin/appointments" class="text-xs font-semibold text-blue-600 hover:underline">
-            All Appointments Portal &rarr;
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
+          <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <LucideClipboardCheck class="h-5 w-5 text-blue-600" />
+              <span>Clinic Bookings & Consultations</span>
+            </h2>
+            <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md transition-colors"
+                :class="activeTab === 'all' ? 'bg-white font-semibold text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                @click="activeTab = 'all'"
+              >
+                All Bookings ({{ appointmentsStore.adminAppointments.length }})
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md transition-colors"
+                :class="activeTab === 'today' ? 'bg-white font-semibold text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                @click="activeTab = 'today'"
+              >
+                Today Only ({{ dashboardStore.staffSummary?.today_count || 0 }})
+              </button>
+            </div>
+          </div>
+
+          <NuxtLink to="/admin/appointments" class="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            <span>Directory & Filters &rarr;</span>
           </NuxtLink>
         </div>
 
-        <div v-if="!dashboardStore.staffSummary?.today_appointments || dashboardStore.staffSummary.today_appointments.length === 0" class="py-8 text-center bg-gray-50 rounded-xl border border-gray-200">
-          <LucideCalendarX class="h-10 w-10 text-gray-400 mx-auto mb-2" />
-          <h4 class="text-base font-semibold text-gray-900">No Appointments Today</h4>
-          <p class="text-xs text-gray-500 mt-1">There are no appointments scheduled for today's date.</p>
+        <!-- All Bookings View -->
+        <div v-if="activeTab === 'all'">
+          <div v-if="appointmentsStore.adminAppointments.length === 0" class="py-8 text-center bg-gray-50 rounded-xl border border-gray-200">
+            <LucideCalendarX class="h-10 w-10 text-gray-400 mx-auto mb-2" />
+            <h4 class="text-base font-semibold text-gray-900">No Clinic Bookings</h4>
+            <p class="text-xs text-gray-500 mt-1">There are currently no patient appointments booked in the system.</p>
+          </div>
+
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-700">
+              <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold text-xs uppercase">
+                <tr>
+                  <th class="px-4 py-3">Scheduled Time</th>
+                  <th class="px-4 py-3">Reference / Patient</th>
+                  <th class="px-4 py-3">Assigned Doctor</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3 text-right">Quick Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="appt in appointmentsStore.adminAppointments" :key="appt.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                    <div class="flex items-center gap-1.5">
+                      <span>{{ formatDate(appt.scheduled_at) }}</span>
+                      <span
+                        v-if="appt.scheduled_at.startsWith(todayStr)"
+                        class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-green-100 text-green-700"
+                      >
+                        Today
+                      </span>
+                    </div>
+                    <div class="font-mono text-xs text-gray-500">{{ formatTime(appt.scheduled_at) }}</div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="font-mono text-xs text-gray-500 mb-0.5">{{ appt.appointment_reference }}</div>
+                    <div class="font-semibold text-gray-900">{{ appt.patient.user.name }}</div>
+                    <div class="text-xs text-gray-500">{{ appt.patient.user.email }}</div>
+                  </td>
+                  <td class="px-4 py-3 font-medium text-gray-900">
+                    <div>Dr. {{ appt.doctor.user.name }}</div>
+                    <div v-if="appt.doctor.specialty" class="text-xs text-teal-600 font-normal">{{ appt.doctor.specialty.name }}</div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <BaseStatusBadge :status="appt.status" />
+                  </td>
+                  <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                    <button
+                      v-if="appt.status === 'pending'"
+                      class="px-2.5 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700"
+                      @click="handleUpdateStatus(appt.id, 'confirmed')"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      v-if="appt.status === 'pending' || appt.status === 'confirmed'"
+                      class="px-2.5 py-1 border border-red-200 text-red-600 rounded text-xs font-medium hover:bg-red-50"
+                      @click="handleUpdateStatus(appt.id, 'cancelled')"
+                    >
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-gray-700">
-            <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold text-xs uppercase">
-              <tr>
-                <th class="px-4 py-3">Time</th>
-                <th class="px-4 py-3">Reference / Patient</th>
-                <th class="px-4 py-3">Assigned Doctor</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3 text-right">Quick Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              <tr v-for="appt in dashboardStore.staffSummary.today_appointments" :key="appt.id" class="hover:bg-gray-50">
-                <td class="px-4 py-3 font-mono font-bold text-gray-900 whitespace-nowrap">
-                  {{ formatTime(appt.scheduled_at) }}
-                </td>
-                <td class="px-4 py-3">
-                  <div class="font-mono text-xs text-gray-500 mb-0.5">{{ appt.appointment_reference }}</div>
-                  <div class="font-semibold text-gray-900">{{ appt.patient.user.name }}</div>
-                </td>
-                <td class="px-4 py-3 font-medium text-gray-900">
-                  Dr. {{ appt.doctor.user.name }}
-                </td>
-                <td class="px-4 py-3">
-                  <BaseStatusBadge :status="appt.status" />
-                </td>
-                <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
-                  <button
-                    v-if="appt.status === 'pending'"
-                    class="px-2.5 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700"
-                    @click="handleUpdateStatus(appt.id, 'confirmed')"
-                  >
-                    Confirm
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Today Only View -->
+        <div v-else>
+          <div v-if="!dashboardStore.staffSummary?.today_appointments || dashboardStore.staffSummary.today_appointments.length === 0" class="py-8 text-center bg-gray-50 rounded-xl border border-gray-200">
+            <LucideCalendarX class="h-10 w-10 text-gray-400 mx-auto mb-2" />
+            <h4 class="text-base font-semibold text-gray-900">No Appointments Today</h4>
+            <p class="text-xs text-gray-500 mt-1">There are no appointments scheduled for today's date.</p>
+            <button
+              type="button"
+              class="btn-primary mt-3 text-xs"
+              @click="activeTab = 'all'"
+            >
+              View All Bookings ({{ appointmentsStore.adminAppointments.length }})
+            </button>
+          </div>
+
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-700">
+              <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold text-xs uppercase">
+                <tr>
+                  <th class="px-4 py-3">Time</th>
+                  <th class="px-4 py-3">Reference / Patient</th>
+                  <th class="px-4 py-3">Assigned Doctor</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3 text-right">Quick Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="appt in dashboardStore.staffSummary.today_appointments" :key="appt.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 font-mono font-bold text-gray-900 whitespace-nowrap">
+                    {{ formatTime(appt.scheduled_at) }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="font-mono text-xs text-gray-500 mb-0.5">{{ appt.appointment_reference }}</div>
+                    <div class="font-semibold text-gray-900">{{ appt.patient.user.name }}</div>
+                  </td>
+                  <td class="px-4 py-3 font-medium text-gray-900">
+                    Dr. {{ appt.doctor.user.name }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <BaseStatusBadge :status="appt.status" />
+                  </td>
+                  <td class="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                    <button
+                      v-if="appt.status === 'pending'"
+                      class="px-2.5 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700"
+                      @click="handleUpdateStatus(appt.id, 'confirmed')"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      v-if="appt.status === 'pending' || appt.status === 'confirmed'"
+                      class="px-2.5 py-1 border border-red-200 text-red-600 rounded text-xs font-medium hover:bg-red-50"
+                      @click="handleUpdateStatus(appt.id, 'cancelled')"
+                    >
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

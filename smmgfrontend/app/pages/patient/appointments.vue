@@ -137,6 +137,17 @@ const formatTime = (isoStr: string) => {
       </template>
     </BasePageHeader>
 
+    <!-- Clinic Approval Business Logic Note -->
+    <div class="mb-6 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-xs text-blue-900 flex items-start gap-3">
+      <LucideInfo class="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+      <div class="space-y-0.5">
+        <p class="font-semibold">How Appointment Approval Works:</p>
+        <p class="text-blue-800 leading-relaxed">
+          When you book, your consultation starts in <strong>Pending</strong> status. Our <strong>Clinic Staff / Doctor's Assistant</strong> verifies the doctor's schedule and room availability, then confirms your booking. You can click on any appointment below to view its live step-by-step progress.
+        </p>
+      </div>
+    </div>
+
     <!-- Alert Notifications -->
     <div v-if="actionSuccess" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -239,13 +250,33 @@ const formatTime = (isoStr: string) => {
           <div v-if="appt.cancellation_reason" class="text-xs text-red-600 bg-red-50 p-2.5 rounded border border-red-100">
             <span class="font-semibold">Cancellation Note:</span> {{ appt.cancellation_reason }}
           </div>
+
+          <!-- Progress Stepper on Card -->
+          <div class="pt-2 pb-1 border-t border-gray-100">
+            <FeaturesAppointmentsBookingProgressTracker
+              :appointment="appt"
+              :compact="true"
+              :show-logic-details="false"
+            />
+          </div>
+
+          <!-- View Details & Progress Link -->
+          <div class="pt-2">
+            <NuxtLink
+              :to="`/patient/appointments/${appt.id}`"
+              class="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-primary-200 bg-primary-50/50 text-xs font-semibold text-primary-700 hover:bg-primary-100 transition-colors"
+            >
+              <LucideActivity class="h-3.5 w-3.5" />
+              <span>View Booking Progress & Details &rarr;</span>
+            </NuxtLink>
+          </div>
         </div>
 
         <!-- Action Buttons for Upcoming Active Appointments -->
         <div v-if="appt.status === 'confirmed' || appt.status === 'pending'" class="pt-3 border-t border-gray-100 flex gap-3">
           <NuxtLink
             :to="`/patient/appointments/${appt.id}/reschedule`"
-            class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
+            class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 text-center"
           >
             Reschedule
           </NuxtLink>

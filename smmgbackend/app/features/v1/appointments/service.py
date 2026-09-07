@@ -318,7 +318,10 @@ async def update_appointment_status(
         my_doctor = await doctor_repository.get_by_user_id(db, current_user.id)
         if not my_doctor or my_doctor.id != appt.doctor_profile_id:
             raise ForbiddenException(detail="Doctors can only update their assigned appointments.")
-        valid_transitions = {"confirmed": ["completed", "cancelled"]}
+        valid_transitions = {
+            "pending": ["confirmed", "cancelled"],
+            "confirmed": ["completed", "cancelled"],
+        }
     elif current_user.role in ["staff", "admin"]:
         valid_transitions = {
             "pending": ["confirmed", "cancelled"],

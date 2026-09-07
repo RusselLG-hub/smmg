@@ -152,6 +152,13 @@ const formatTime = (isoStr: string) => {
           <LucideCalendarX class="h-10 w-10 text-gray-400 mx-auto mb-2" />
           <h4 class="text-base font-semibold text-gray-900">No Consultations Today</h4>
           <p class="text-xs text-gray-500 mt-1">You have no appointments scheduled for today's date.</p>
+          <NuxtLink
+            to="/doctor/appointments"
+            class="btn-primary inline-flex items-center gap-1.5 mt-3 text-xs"
+          >
+            <LucideClipboardList class="h-4 w-4" />
+            <span>View All Consultations ({{ dashboardStore.doctorSummary?.upcoming_count || 0 }} upcoming) &rarr;</span>
+          </NuxtLink>
         </div>
 
         <div v-else class="overflow-x-auto">
