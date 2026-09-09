@@ -76,6 +76,68 @@ class AiIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second_call_kwargs["role"], "assistant")
         self.assertIn("First-Aid Guidance for Minor", second_call_kwargs["content"])
 
+    async def test_send_user_message_returns_something_went_wrong_on_unhandled_query_when_provider_fails(self):
+        db = AsyncMock()
+        user = SimpleNamespace(id="user-1", name="Test User")
+        session = SimpleNamespace(id="sess-1", user_id="user-1", title="Test Chat")
+        user_msg = SimpleNamespace(id="msg-1", session_id="sess-1", role="user", content="how to cure buni?")
+        assistant_msg = SimpleNamespace(
+            id="msg-2",
+            session_id="sess-1",
+            role="assistant",
+            content=prompts.SOMETHING_WENT_WRONG_RESPONSE,
+            created_at="2026-09-09T08:00:00Z",
+        )
+
+        with (
+            patch.object(ai_service.ai_repository, "get_session_by_id", AsyncMock(return_value=session)),
+            patch.object(ai_service.ai_repository, "create_message", AsyncMock(side_effect=[user_msg, assistant_msg])) as create_msg,
+            patch.object(ai_service.ai_repository, "touch_session_title", AsyncMock()),
+            patch.object(ai_service.ai_repository, "get_recent_messages", AsyncMock(return_value=[])),
+            patch.object(
+                ai_service,
+                "generate_chat_response",
+                AsyncMock(side_effect=ai_chat.AiProviderError("Unconfigured", code="provider_not_configured")),
+            ),
+        ):
+            result = await ai_service.send_user_message(
+                db, user, "sess-1", ai_schema.AIChatMessageCreate(content="how to cure buni?")
+            )
+
+        second_call_kwargs = create_msg.await_args_list[1].kwargs
+        self.assertEqual(second_call_kwargs["content"], prompts.SOMETHING_WENT_WRONG_RESPONSE)
+
+    async def test_send_user_message_returns_something_went_wrong_on_connection_error(self):
+        db = AsyncMock()
+        user = SimpleNamespace(id="user-1", name="Test User")
+        session = SimpleNamespace(id="sess-1", user_id="user-1", title="Test Chat")
+        user_msg = SimpleNamespace(id="msg-1", session_id="sess-1", role="user", content="What should I do for a burn?")
+        assistant_msg = SimpleNamespace(
+            id="msg-2",
+            session_id="sess-1",
+            role="assistant",
+            content=prompts.SOMETHING_WENT_WRONG_RESPONSE,
+            created_at="2026-09-09T08:00:00Z",
+        )
+
+        with (
+            patch.object(ai_service.ai_repository, "get_session_by_id", AsyncMock(return_value=session)),
+            patch.object(ai_service.ai_repository, "create_message", AsyncMock(side_effect=[user_msg, assistant_msg])) as create_msg,
+            patch.object(ai_service.ai_repository, "touch_session_title", AsyncMock()),
+            patch.object(ai_service.ai_repository, "get_recent_messages", AsyncMock(return_value=[])),
+            patch.object(
+                ai_service,
+                "generate_chat_response",
+                AsyncMock(side_effect=Exception("Connection refused")),
+            ),
+        ):
+            result = await ai_service.send_user_message(
+                db, user, "sess-1", ai_schema.AIChatMessageCreate(content="What should I do for a burn?")
+            )
+
+        second_call_kwargs = create_msg.await_args_list[1].kwargs
+        self.assertEqual(second_call_kwargs["content"], prompts.SOMETHING_WENT_WRONG_RESPONSE)
+
     def test_unconfigured_response_guidance(self):
         emergency_reply = prompts.get_unconfigured_response("I have severe chest pain")
         self.assertIn("911", emergency_reply)

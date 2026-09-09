@@ -119,16 +119,20 @@ async def send_user_message(
         )
     except AiProviderError as exc:
         if exc.code == "provider_not_configured":
-            assistant_reply = prompts.get_unconfigured_response(clean_content)
+            fallback = prompts.get_unconfigured_response(clean_content)
+            if fallback == prompts.OUT_OF_SCOPE_RESPONSE:
+                assistant_reply = prompts.SOMETHING_WENT_WRONG_RESPONSE
+            else:
+                assistant_reply = fallback
         else:
-            logger.warning("AI provider error: %s. Using automated fallback response.", exc)
-            assistant_reply = prompts.get_unconfigured_response(clean_content)
+            logger.warning("AI provider error: %s.", exc)
+            assistant_reply = prompts.SOMETHING_WENT_WRONG_RESPONSE
     except Exception as exc:
-        logger.warning("Unexpected AI error: %s. Using automated fallback response.", exc)
-        assistant_reply = prompts.get_unconfigured_response(clean_content)
+        logger.warning("Unexpected AI error: %s.", exc)
+        assistant_reply = prompts.SOMETHING_WENT_WRONG_RESPONSE
 
     if not assistant_reply or not assistant_reply.strip():
-        assistant_reply = prompts.OUT_OF_SCOPE_RESPONSE
+        assistant_reply = prompts.SOMETHING_WENT_WRONG_RESPONSE
 
     # 5. Persist Assistant Message
     assistant_msg = await ai_repository.create_message(

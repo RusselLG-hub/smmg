@@ -38,6 +38,10 @@ OUT_OF_SCOPE_RESPONSE = (
     "feel free to ask!"
 )
 
+SOMETHING_WENT_WRONG_RESPONSE = (
+    "Something went wrong. Please check your internet connection and try again."
+)
+
 
 def get_unconfigured_response(user_message: str) -> str:
     """Return a safe development response when no AI provider is configured."""
@@ -142,10 +146,4 @@ def get_unconfigured_response(user_message: str) -> str:
         )
 
     # Automated response for non-health or unknown topics
-    return (
-        "I'm sorry, I don't have knowledge about that. I am your SMMG AI Health & "
-        "First-Aid Assistant, dedicated to providing health education, basic first-aid "
-        "guidance, and clinic appointment support. If you have questions regarding health "
-        "symptoms, basic first-aid, or would like to schedule an appointment with an "
-        "SMMG doctor, please feel free to ask!"
-    )
+    return OUT_OF_SCOPE_RESPONSE
