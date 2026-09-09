@@ -118,7 +118,7 @@ const handleInitiateBooking = () => {
   }
   if (!selectedSlot.value) return
   router.push({
-    path: '/patient/appointments/book',
+    path: '/book',
     query: {
       doctor: doctorId,
       date: selectedDate.value,

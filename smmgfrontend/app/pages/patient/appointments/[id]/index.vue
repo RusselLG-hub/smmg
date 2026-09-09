@@ -59,10 +59,10 @@ const formatTime = (isoStr: string) => {
   })
 }
 
-// Can cancel or reschedule if status is pending or confirmed, and more than 24h away
+// Can cancel or reschedule only if status is pending, and more than 24h away
 const canModify = computed(() => {
   if (!appointment.value) return false
-  if (appointment.value.status !== 'pending' && appointment.value.status !== 'confirmed') return false
+  if (appointment.value.status !== 'pending') return false
   const scheduledTime = new Date(appointment.value.scheduled_at).getTime()
   const now = Date.now()
   const hoursUntil = (scheduledTime - now) / (1000 * 60 * 60)
@@ -70,7 +70,7 @@ const canModify = computed(() => {
 })
 
 const handleConfirmCancel = async () => {
-  if (!appointment.value) return
+  if (!appointment.value || appointment.value.status !== 'pending') return
   isCancelling.value = true
   actionError.value = null
   actionSuccess.value = null
@@ -286,7 +286,8 @@ const handleConfirmCancel = async () => {
           <span>Back to All Appointments</span>
         </NuxtLink>
 
-        <div v-if="appointment.status === 'pending' || appointment.status === 'confirmed'" class="flex flex-wrap gap-3 justify-end">
+        <!-- Pending: Patient can reschedule or cancel (subject to 24h rule) -->
+        <div v-if="appointment.status === 'pending'" class="flex flex-wrap gap-3 justify-end items-center">
           <NuxtLink
             v-if="canModify"
             :to="`/patient/appointments/${appointment.id}/reschedule`"
@@ -309,6 +310,15 @@ const handleConfirmCancel = async () => {
           <span v-else class="text-xs text-gray-500 italic flex items-center">
             * Changes are restricted within 24 hours of consultation time.
           </span>
+        </div>
+
+        <!-- Confirmed: Locked for patient modification -->
+        <div
+          v-else-if="appointment.status === 'confirmed'"
+          class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800"
+        >
+          <LucideCheckCircle2 class="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>This appointment is confirmed. To cancel or change your schedule, please contact clinic staff directly.</span>
         </div>
       </div>
     </div>

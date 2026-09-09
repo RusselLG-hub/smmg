@@ -172,7 +172,7 @@ class AppointmentBusinessRuleTests(unittest.IsolatedAsyncioTestCase):
                 )
 
     async def test_patient_reschedule_returns_to_pending(self):
-        appt = appointment("confirmed")
+        appt = appointment("pending")
         db = AsyncMock()
         with (
             patch.object(service.appointment_repository, "get_by_id", AsyncMock(return_value=appt)),
@@ -187,6 +187,17 @@ class AppointmentBusinessRuleTests(unittest.IsolatedAsyncioTestCase):
                 db, user("patient"), appt.id, schema.AppointmentReschedule(date="2099-01-02", time="10:00")
             )
         self.assertEqual(reschedule.await_args.kwargs["new_status"], "pending")
+
+    async def test_patient_cannot_reschedule_confirmed_appointment(self):
+        appt = appointment("confirmed")
+        with (
+            patch.object(service.appointment_repository, "get_by_id", AsyncMock(return_value=appt)),
+            patch.object(service.patient_repository, "get_by_user_id", AsyncMock(return_value=SimpleNamespace(id="patient-1"))),
+        ):
+            with self.assertRaises(BadRequestException):
+                await service.reschedule_appointment(
+                    AsyncMock(), user("patient"), appt.id, schema.AppointmentReschedule(date="2099-01-02", time="10:00")
+                )
 
     async def test_staff_reschedule_preserves_status(self):
         appt = appointment("confirmed")
@@ -223,8 +234,19 @@ class AppointmentBusinessRuleTests(unittest.IsolatedAsyncioTestCase):
                 )
 
     async def test_patient_cannot_cancel_within_24_hours(self):
-        appt = appointment("confirmed")
+        appt = appointment("pending")
         appt.scheduled_at = datetime.now(timezone.utc) + timedelta(hours=12)
+        with (
+            patch.object(service.appointment_repository, "get_by_id", AsyncMock(return_value=appt)),
+            patch.object(service.patient_repository, "get_by_user_id", AsyncMock(return_value=SimpleNamespace(id="patient-1"))),
+        ):
+            with self.assertRaises(BadRequestException):
+                await service.cancel_appointment(
+                    AsyncMock(), user("patient"), appt.id, schema.AppointmentCancel()
+                )
+
+    async def test_patient_cannot_cancel_confirmed_appointment(self):
+        appt = appointment("confirmed")
         with (
             patch.object(service.appointment_repository, "get_by_id", AsyncMock(return_value=appt)),
             patch.object(service.patient_repository, "get_by_user_id", AsyncMock(return_value=SimpleNamespace(id="patient-1"))),
@@ -252,7 +274,7 @@ class AppointmentBusinessRuleTests(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_patient_can_cancel_own_appointment_more_than_24_hours_ahead(self):
-        appt = appointment("confirmed")
+        appt = appointment("pending")
         cancelled = appointment("cancelled")
         with (
             patch.object(service.appointment_repository, "get_by_id", AsyncMock(return_value=appt)),

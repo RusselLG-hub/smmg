@@ -15,5 +15,20 @@ export const usePatientService = () => {
         method: 'PUT',
         body: data,
       }),
+
+    archivePatient: (patientId: string) =>
+      $api<PatientProfile>(`/v1/patients/${patientId}/archive`, {
+        method: 'PATCH',
+      }),
+
+    restorePatient: (patientId: string) =>
+      $api<PatientProfile>(`/v1/patients/${patientId}/restore`, {
+        method: 'PATCH',
+      }),
+
+    deletePatient: (patientId: string) =>
+      $api<void>(`/v1/patients/${patientId}`, {
+        method: 'DELETE',
+      }),
   }
 }

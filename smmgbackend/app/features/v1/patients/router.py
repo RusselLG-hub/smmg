@@ -34,3 +34,40 @@ async def update_my_profile(
     db: AsyncSession = Depends(get_db),
 ):
     return await patient_service.update_patient_profile(db, current_user, data)
+
+
+@router.patch(
+    "/{patient_id}/archive",
+    response_model=patient_schema.PatientProfileRead,
+    dependencies=[Depends(require_role("staff", "admin"))],
+)
+async def archive_patient(
+    patient_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    return await patient_service.archive_patient(db, patient_id)
+
+
+@router.patch(
+    "/{patient_id}/restore",
+    response_model=patient_schema.PatientProfileRead,
+    dependencies=[Depends(require_role("staff", "admin"))],
+)
+async def restore_patient(
+    patient_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    return await patient_service.restore_patient(db, patient_id)
+
+
+@router.delete(
+    "/{patient_id}",
+    status_code=204,
+    dependencies=[Depends(require_role("admin", "staff"))],
+)
+async def delete_patient(
+    patient_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    await patient_service.delete_patient(db, patient_id)
+

@@ -195,6 +195,11 @@ async def cancel_appointment(
         if not patient_prof or appt.patient_profile_id != patient_prof.id:
             raise ForbiddenException(detail="Patients can only cancel their own appointments.")
 
+        if appt.status == "confirmed":
+            raise BadRequestException(
+                detail="Confirmed appointments cannot be cancelled by patients. Please contact clinic staff directly."
+            )
+
         if appt.scheduled_at - now_utc < timedelta(hours=24):
             raise BadRequestException(
                 detail="Appointments cannot be cancelled by patients within 24 hours of the scheduled time. Please contact clinic staff."
@@ -246,6 +251,11 @@ async def reschedule_appointment(
         patient_prof = await patient_repository.get_by_user_id(db, current_user.id)
         if not patient_prof or appt.patient_profile_id != patient_prof.id:
             raise ForbiddenException(detail="Patients can only reschedule their own appointments.")
+
+        if appt.status == "confirmed":
+            raise BadRequestException(
+                detail="Confirmed appointments cannot be rescheduled by patients. Please contact clinic staff directly."
+            )
 
         if appt.scheduled_at - now_utc < timedelta(hours=24):
             raise BadRequestException(

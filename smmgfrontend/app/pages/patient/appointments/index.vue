@@ -37,6 +37,7 @@ const handleTabChange = async (tab: 'upcoming' | 'past') => {
 }
 
 const openCancelModal = (appt: Appointment) => {
+  if (appt.status !== 'pending') return
   selectedAppointment.value = appt
   cancellationReason.value = ''
   actionError.value = null
@@ -44,7 +45,7 @@ const openCancelModal = (appt: Appointment) => {
 }
 
 const handleConfirmCancel = async () => {
-  if (!selectedAppointment.value) return
+  if (!selectedAppointment.value || selectedAppointment.value.status !== 'pending') return
   isCancelling.value = true
   actionError.value = null
   actionSuccess.value = null
@@ -65,6 +66,7 @@ const handleConfirmCancel = async () => {
 }
 
 const openRescheduleModal = async (appt: Appointment) => {
+  if (appt.status !== 'pending') return
   selectedAppointment.value = appt
   const dateOnly = appt.scheduled_at.split('T')[0]
   rescheduleDate.value = dateOnly
@@ -118,21 +120,25 @@ const formatTime = (isoStr: string) => {
   return d.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
+    hour12: true,
   })
 }
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="page-container">
     <BasePageHeader
+      kicker="Your Medical Calendar"
       title="My Appointments"
-      description="Manage your healthcare consultations and booking history"
+      description="Everything about your upcoming healthcare consultations and booking history, kept in one place."
     >
       <template #actions>
-        <NuxtLink to="/doctors" class="btn btn-primary">
-          <LucidePlus class="h-4 w-4" />
-          <span>Book New Appointment</span>
+        <NuxtLink
+          to="/book"
+          class="btn-primary flex items-center gap-2"
+        >
+          <LucideCalendarPlus class="h-4 w-4" />
+          <span>Book Consultation</span>
         </NuxtLink>
       </template>
     </BasePageHeader>
@@ -149,109 +155,132 @@ const formatTime = (isoStr: string) => {
     </div>
 
     <!-- Alert Notifications -->
-    <div v-if="actionSuccess" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
+    <div v-if="actionSuccess" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
         <LucideCheckCircle2 class="h-5 w-5 text-green-500" />
         <span>{{ actionSuccess }}</span>
       </div>
-      <button class="text-green-700 font-bold" @click="actionSuccess = null">&times;</button>
+      <button class="text-green-700 font-bold text-base" @click="actionSuccess = null">&times;</button>
     </div>
 
-    <div v-if="actionError" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between">
+    <div v-if="actionError" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
         <LucideAlertCircle class="h-5 w-5 text-red-500" />
         <span>{{ actionError }}</span>
       </div>
-      <button class="text-red-700 font-bold" @click="actionError = null">&times;</button>
+      <button class="text-red-700 font-bold text-base" @click="actionError = null">&times;</button>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="border-b border-gray-200 mb-6 flex gap-4">
+    <!-- Navigation Tab Pills (Distinct Indigo Theme) -->
+    <div class="mb-6 inline-flex rounded-xl border border-indigo-100 bg-white p-1 shadow-xs">
       <button
-        class="py-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2"
-        :class="activeTab === 'upcoming' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+        type="button"
+        class="rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5"
+        :class="activeTab === 'upcoming' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
         @click="handleTabChange('upcoming')"
       >
         <LucideCalendarCheck class="h-4 w-4" />
-        <span>Upcoming Appointments</span>
+        <span>Upcoming Consultations</span>
       </button>
 
       <button
-        class="py-3 px-4 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2"
-        :class="activeTab === 'past' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-600 hover:text-gray-900'"
+        type="button"
+        class="rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5"
+        :class="activeTab === 'past' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
         @click="handleTabChange('past')"
       >
         <LucideHistory class="h-4 w-4" />
-        <span>History & Cancelled</span>
+        <span>Past & Cancelled</span>
       </button>
     </div>
 
     <!-- Loading State -->
     <div v-if="appointmentsStore.loading" class="flex justify-center py-16">
-      <LucideLoader2 class="h-8 w-8 text-primary-600 animate-spin" />
+      <LucideLoader2 class="h-8 w-8 text-indigo-600 animate-spin" />
     </div>
 
     <!-- Empty State -->
-    <BaseEmptyState
+    <div
       v-else-if="appointmentsStore.myAppointments.length === 0"
-      title="No Appointments Found"
-      :description="`You have no ${activeTab} appointments recorded.`"
+      class="rounded-2xl border border-dashed border-indigo-200 bg-white p-12 text-center shadow-xs"
     >
-      <template #icon>
-        <LucideCalendarX class="h-10 w-10 text-gray-400" />
-      </template>
-    </BaseEmptyState>
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 mb-4">
+        <LucideCalendar class="h-6 w-6" />
+      </div>
+      <h3 class="text-lg font-bold text-gray-900">No appointments found</h3>
+      <p class="mt-1 text-sm text-gray-500">You have no {{ activeTab }} consultations recorded.</p>
+      <NuxtLink v-if="activeTab === 'upcoming'" to="/book" class="btn bg-emerald-600 text-white hover:bg-emerald-700 mt-5 inline-flex items-center gap-2">
+        <LucideCalendarPlus class="h-4 w-4" />
+        <span>Book your consultation</span>
+      </NuxtLink>
+    </div>
 
-    <!-- Appointments Cards / Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div
+    <!-- Improved Appointments Cards Grid (Distinct Indigo/Slate Theme) -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <article
         v-for="appt in appointmentsStore.myAppointments"
         :key="appt.id"
-        class="card card-hover space-y-4"
+        class="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-md"
       >
-        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
-          <span class="font-mono text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded border">
+        <!-- Top header strip with Reference & Status badge -->
+        <div class="flex items-center justify-between border-b border-indigo-50 bg-gradient-to-r from-indigo-50/70 via-white to-indigo-50/30 px-5 py-3.5">
+          <span class="font-mono text-xs font-bold text-gray-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs">
             {{ appt.appointment_reference }}
           </span>
-
-          <!-- Status Badge -->
           <BaseStatusBadge :status="appt.status" />
         </div>
 
-        <div class="space-y-2 text-sm">
-          <div class="font-bold text-gray-900 text-base">
-            Dr. {{ appt.doctor.user.name }}
+        <!-- Card Body -->
+        <div class="flex flex-1 flex-col p-5 space-y-4">
+          <!-- Doctor Header with Avatar -->
+          <div class="flex items-start gap-3.5">
+            <div class="h-12 w-12 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-2xs">
+              <img
+                v-if="appt.doctor.profile_image_url"
+                :src="appt.doctor.profile_image_url"
+                :alt="appt.doctor.user.name"
+                class="h-full w-full object-cover"
+              />
+              <LucideStethoscope v-else class="h-6 w-6 text-indigo-600" />
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <h3 class="font-bold text-base text-gray-900 leading-snug truncate">
+                Dr. {{ appt.doctor.user.name }}
+              </h3>
+              <p class="text-xs font-semibold text-indigo-700 flex items-center gap-1 mt-0.5">
+                <LucideActivity class="h-3 w-3" />
+                <span>{{ appt.doctor.specialty?.name || 'Medical Specialist' }}</span>
+              </p>
+              <p v-if="appt.service" class="text-[11px] text-gray-500 truncate mt-0.5">
+                Service: <strong class="text-gray-700 font-medium">{{ appt.service.name }}</strong>
+              </p>
+            </div>
           </div>
 
-          <div v-if="appt.doctor.specialty" class="text-teal-600 text-xs font-semibold flex items-center gap-1">
-            <LucideActivity class="h-3.5 w-3.5" />
-            <span>{{ appt.doctor.specialty.name }}</span>
-          </div>
-
-          <div v-if="appt.service" class="text-gray-600 text-xs">
-            Service: <strong class="text-gray-800">{{ appt.service.name }}</strong>
-          </div>
-
-          <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between text-xs font-medium">
-            <div class="flex items-center gap-1.5 text-gray-700">
-              <LucideCalendar class="h-4 w-4 text-gray-400" />
+          <!-- Schedule Date & Time Box -->
+          <div class="bg-gray-50/90 rounded-xl p-3.5 border border-gray-100 space-y-2 text-xs font-medium text-gray-800">
+            <div class="flex items-center gap-2">
+              <LucideCalendar class="h-4 w-4 text-primary-600 shrink-0" />
               <span>{{ formatDate(appt.scheduled_at) }}</span>
             </div>
-            <div class="flex items-center gap-1.5 font-mono text-gray-900">
-              <LucideClock class="h-4 w-4 text-gray-400" />
+            <div class="flex items-center gap-2 font-mono">
+              <LucideClock class="h-4 w-4 text-primary-600 shrink-0" />
               <span>{{ formatTime(appt.scheduled_at) }}</span>
             </div>
           </div>
 
-          <div v-if="appt.reason" class="text-xs text-gray-600 bg-gray-50/50 p-2.5 rounded border border-gray-100">
-            <span class="font-semibold text-gray-700">Reason:</span> {{ appt.reason }}
+          <!-- Reason / Symptoms snippet -->
+          <div v-if="appt.reason" class="text-xs text-gray-600 bg-white p-2.5 rounded-lg border border-gray-100 line-clamp-2">
+            <span class="font-semibold text-gray-700">Symptoms:</span> {{ appt.reason }}
           </div>
 
-          <div v-if="appt.cancellation_reason" class="text-xs text-red-600 bg-red-50 p-2.5 rounded border border-red-100">
+          <!-- Cancellation note if present -->
+          <div v-if="appt.cancellation_reason" class="text-xs text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-100">
             <span class="font-semibold">Cancellation Note:</span> {{ appt.cancellation_reason }}
           </div>
 
-          <!-- Progress Stepper on Card -->
+          <!-- Compact Stepper Progress Tracker -->
           <div class="pt-2 pb-1 border-t border-gray-100">
             <FeaturesAppointmentsBookingProgressTracker
               :appointment="appt"
@@ -260,35 +289,45 @@ const formatTime = (isoStr: string) => {
             />
           </div>
 
-          <!-- View Details & Progress Link -->
-          <div class="pt-2">
+          <!-- Card Actions at Bottom -->
+          <div class="mt-auto pt-3 border-t border-gray-100 space-y-2">
             <NuxtLink
               :to="`/patient/appointments/${appt.id}`"
-              class="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-primary-200 bg-primary-50/50 text-xs font-semibold text-primary-700 hover:bg-primary-100 transition-colors"
+              class="flex w-full items-center justify-between rounded-xl bg-indigo-50/80 border border-indigo-200/70 px-4 py-2.5 text-xs font-bold text-indigo-900 transition-colors group-hover:bg-indigo-100 hover:text-indigo-950"
             >
-              <LucideActivity class="h-3.5 w-3.5" />
-              <span>View Booking Progress & Details &rarr;</span>
+              <span>View details & live tracker</span>
+              <LucideArrowRight class="h-4 w-4" />
             </NuxtLink>
+
+            <!-- Actions: Reschedule / Cancel only for Pending consultations -->
+            <div v-if="appt.status === 'pending'" class="flex gap-2">
+              <button
+                type="button"
+                class="flex-1 py-1.5 px-3 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 text-center transition-colors"
+                @click="openRescheduleModal(appt)"
+              >
+                Reschedule
+              </button>
+              <button
+                type="button"
+                class="py-1.5 px-3 rounded-lg border border-red-200 bg-red-50 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+                @click="openCancelModal(appt)"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <!-- Confirmed: Patient cannot cancel or reschedule online -->
+            <div
+              v-else-if="appt.status === 'confirmed'"
+              class="flex items-center gap-1.5 rounded-lg bg-emerald-50/70 border border-emerald-200/80 px-3 py-2 text-[11px] text-emerald-800"
+            >
+              <LucideLock class="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span>Confirmed booking · Contact clinic to modify</span>
+            </div>
           </div>
         </div>
-
-        <!-- Action Buttons for Upcoming Active Appointments -->
-        <div v-if="appt.status === 'confirmed' || appt.status === 'pending'" class="pt-3 border-t border-gray-100 flex gap-3">
-          <NuxtLink
-            :to="`/patient/appointments/${appt.id}/reschedule`"
-            class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 text-center"
-          >
-            Reschedule
-          </NuxtLink>
-          <button
-            type="button"
-            class="px-3 py-1.5 border border-red-200 bg-red-50 rounded-lg text-xs font-medium text-red-700 hover:bg-red-100"
-            @click="openCancelModal(appt)"
-          >
-            Cancel Appointment
-          </button>
-        </div>
-      </div>
+      </article>
     </div>
 
     <!-- CANCEL APPOINTMENT MODAL -->

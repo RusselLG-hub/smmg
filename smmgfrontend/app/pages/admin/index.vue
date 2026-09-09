@@ -48,17 +48,37 @@ const loadingStaff = ref(false)
 const patientRecords = ref<PatientProfile[]>([])
 const loadingPatients = ref(false)
 const patientSearch = ref('')
+const patientStatusFilter = ref('')
+const patientViewMode = ref<'active' | 'archived'>('active')
 const selectedPatientRecord = ref<PatientProfile | null>(null)
 const patientAppointments = ref<Appointment[]>([])
 const loadingPatientHistory = ref(false)
+const pendingArchivePatient = ref<PatientProfile | null>(null)
+const archivingPatient = ref(false)
+
+const activePatientRecords = computed(() => patientRecords.value.filter(p => p.user.is_active))
+const archivedPatientRecords = computed(() => patientRecords.value.filter(p => !p.user.is_active))
+
 const filteredPatientRecords = computed(() => {
-  const query = patientSearch.value.trim().toLowerCase()
-  if (!query) return patientRecords.value
-  return patientRecords.value.filter(patient =>
-    patient.user.name.toLowerCase().includes(query)
-    || patient.user.email.toLowerCase().includes(query)
-    || (patient.phone || '').toLowerCase().includes(query),
-  )
+  const base = patientViewMode.value === 'active' ? activePatientRecords.value : archivedPatientRecords.value
+  return base.filter(patient => {
+    if (patientStatusFilter.value) {
+      const matchLatest = patient.appointment_status === patientStatusFilter.value
+      const matchAll = Boolean(patient.all_statuses?.includes(patientStatusFilter.value))
+      if (!matchLatest && !matchAll) return false
+    }
+
+    const query = patientSearch.value.trim().toLowerCase()
+    if (!query) return true
+
+    return (
+      patient.user.name.toLowerCase().includes(query)
+      || patient.user.email.toLowerCase().includes(query)
+      || (patient.phone || '').toLowerCase().includes(query)
+      || (patient.doctor?.name || '').toLowerCase().includes(query)
+      || (patient.doctor?.specialty_name || '').toLowerCase().includes(query)
+    )
+  })
 })
 
 const showDoctorModal = ref(false)
@@ -71,7 +91,7 @@ const editingServiceId = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const actionSuccess = ref<string | null>(null)
 const uploadingImage = ref(false)
-type DeleteTarget = { type: 'doctor' | 'specialty' | 'service'; id: string }
+type DeleteTarget = { type: 'doctor' | 'specialty' | 'service' | 'patient'; id: string }
 const pendingDelete = ref<DeleteTarget | null>(null)
 const deletingRecord = ref(false)
 
@@ -80,6 +100,7 @@ const deleteModalCopy = computed(() => {
     doctor: ['Delete doctor account?', 'The doctor account and associated profile will be permanently removed.', 'Delete Doctor'],
     specialty: ['Delete specialty?', 'This specialty will be permanently removed from the clinic catalog.', 'Delete Specialty'],
     service: ['Delete clinic service?', 'This service will be permanently removed from the public catalog.', 'Delete Service'],
+    patient: ['Permanently delete patient record?', 'This patient profile, account, and all associated appointment records will be permanently removed.', 'Permanently Delete Patient'],
   } as const
   return labels[pendingDelete.value?.type || 'service']
 })
@@ -386,9 +407,13 @@ const confirmDelete = async () => {
     } else if (target.type === 'specialty') {
       await specialtiesStore.deleteSpecialty(target.id)
       actionSuccess.value = 'Specialty deleted successfully'
-    } else {
+    } else if (target.type === 'service') {
       await clinicServicesStore.deleteService(target.id)
       actionSuccess.value = 'Clinic service deleted successfully'
+    } else if (target.type === 'patient') {
+      await patientService.deletePatient(target.id)
+      patientRecords.value = patientRecords.value.filter(p => p.id !== target.id)
+      actionSuccess.value = 'Patient record permanently deleted successfully'
     }
     pendingDelete.value = null
   } catch (err: any) {
@@ -396,6 +421,49 @@ const confirmDelete = async () => {
   } finally {
     deletingRecord.value = false
   }
+}
+
+const handleArchivePatient = (patient: PatientProfile) => {
+  pendingArchivePatient.value = patient
+}
+
+const confirmArchivePatient = async () => {
+  if (!pendingArchivePatient.value) return
+  archivingPatient.value = true
+  actionError.value = null
+  actionSuccess.value = null
+  try {
+    const updated = await patientService.archivePatient(pendingArchivePatient.value.id)
+    const index = patientRecords.value.findIndex(p => p.id === updated.id)
+    if (index !== -1) {
+      patientRecords.value[index] = updated
+    }
+    actionSuccess.value = `Patient ${updated.user.name} archived successfully.`
+    pendingArchivePatient.value = null
+  } catch (err: any) {
+    actionError.value = err?.data?.detail || 'Failed to archive patient record'
+  } finally {
+    archivingPatient.value = false
+  }
+}
+
+const handleRestorePatient = async (patient: PatientProfile) => {
+  actionError.value = null
+  actionSuccess.value = null
+  try {
+    const updated = await patientService.restorePatient(patient.id)
+    const index = patientRecords.value.findIndex(p => p.id === updated.id)
+    if (index !== -1) {
+      patientRecords.value[index] = updated
+    }
+    actionSuccess.value = `Patient ${updated.user.name} restored successfully.`
+  } catch (err: any) {
+    actionError.value = err?.data?.detail || 'Failed to restore patient record'
+  }
+}
+
+const handlePermanentlyDeletePatient = (patient: PatientProfile) => {
+  pendingDelete.value = { type: 'patient', id: patient.id }
 }
 </script>
 
@@ -677,28 +745,198 @@ const confirmDelete = async () => {
       </div>
     </div>
 
-    <!-- MODAL: ADD STAFF -->
+    <!-- TAB 5: PATIENT RECORD MANAGEMENT -->
     <div v-if="activeTab === 'patients'" class="space-y-6">
-      <div>
-        <h2 class="text-lg font-semibold text-gray-900">Patient Record Management</h2>
-        <p class="text-xs text-gray-500">View registered patient profiles and contact information.</p>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">Patient Record Management</h2>
+          <p class="text-xs text-gray-500">View registered patient profiles, handling doctors, and appointment records.</p>
+        </div>
+        <!-- Active / Archived Toggle -->
+        <div class="inline-flex rounded-lg bg-gray-100 p-1 text-xs font-semibold">
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
+            :class="patientViewMode === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+            @click="patientViewMode = 'active'"
+          >
+            <LucideUsers class="h-3.5 w-3.5" />
+            <span>Active Patients ({{ activePatientRecords.length }})</span>
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
+            :class="patientViewMode === 'archived' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+            @click="patientViewMode = 'archived'"
+          >
+            <LucideArchive class="h-3.5 w-3.5" />
+            <span>Archived ({{ archivedPatientRecords.length }})</span>
+          </button>
+        </div>
       </div>
-      <div class="max-w-md"><label class="form-label">Search Patients</label><div class="relative"><LucideSearch class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" /><input v-model="patientSearch" class="form-input pl-9" placeholder="Search by name, email, or phone" /></div></div>
-      <div v-if="loadingPatients" class="flex justify-center py-12"><LucideLoader2 class="h-8 w-8 animate-spin text-primary-600" /></div>
+
+      <!-- Filters: Search and Status Filter (confirmed, pending, cancel) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+        <div class="sm:col-span-2">
+          <label class="form-label">Search Patients</label>
+          <div class="relative">
+            <LucideSearch class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              v-model="patientSearch"
+              class="form-input pl-9"
+              placeholder="Search by patient, doctor, email, or phone"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Status Filter</label>
+          <select v-model="patientStatusFilter" class="form-input">
+            <option value="">All Statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancel</option>
+          </select>
+        </div>
+      </div>
+
+      <div v-if="loadingPatients" class="flex justify-center py-12">
+        <LucideLoader2 class="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+
       <div v-else class="card-table">
         <table class="w-full text-left text-sm text-gray-700">
-          <thead class="border-b border-gray-200 bg-gray-50 font-semibold"><tr><th class="px-4 py-3">Patient</th><th class="px-4 py-3">Contact</th><th class="px-4 py-3">Demographics</th><th class="px-4 py-3">Address</th><th class="px-4 py-3">Status</th></tr></thead>
+          <thead class="border-b border-gray-200 bg-gray-50 font-semibold">
+            <tr>
+              <th class="px-4 py-3">Patient</th>
+              <th class="px-4 py-3">Doctor</th>
+              <th class="px-4 py-3">Contact</th>
+              <th class="px-4 py-3">Demographics</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-for="patient in filteredPatientRecords" :key="patient.id" class="hover:bg-gray-50">
-              <td class="px-4 py-3"><div class="font-semibold text-gray-900">{{ patient.user.name }}</div><div class="text-xs text-gray-500">{{ patient.user.email }}</div></td>
+              <td class="px-4 py-3">
+                <div class="font-semibold text-gray-900">{{ patient.user.name }}</div>
+                <div class="text-xs text-gray-500">{{ patient.user.email }}</div>
+              </td>
+              <td class="px-4 py-3">
+                <div v-if="patient.doctor" class="flex items-center gap-2">
+                  <div class="h-7 w-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold shrink-0">
+                    Dr
+                  </div>
+                  <div>
+                    <div class="font-medium text-gray-900">Dr. {{ patient.doctor.name }}</div>
+                    <div class="text-xs text-gray-500">{{ patient.doctor.specialty_name || patient.doctor.title || 'General Practice' }}</div>
+                  </div>
+                </div>
+                <span v-else class="text-xs text-gray-400 italic">No doctor assigned</span>
+              </td>
               <td class="px-4 py-3">{{ patient.phone || 'Not provided' }}</td>
-              <td class="px-4 py-3"><div>{{ patient.gender || 'Not provided' }}</div><div class="text-xs text-gray-500">Born: {{ patient.date_of_birth || 'Not provided' }}</div></td>
-              <td class="max-w-xs px-4 py-3">{{ patient.address || 'Not provided' }}</td>
-              <td class="px-4 py-3"><div class="flex items-center justify-between gap-3"><BaseStatusBadge :status="patient.user.is_active ? 'Active' : 'Inactive'" /><button class="text-xs font-semibold text-primary-700 hover:underline" @click="openPatientRecord(patient)">View Record</button></div></td>
+              <td class="px-4 py-3">
+                <div>{{ patient.gender || 'Not provided' }}</div>
+                <div class="text-xs text-gray-500">Born: {{ patient.date_of_birth || 'Not provided' }}</div>
+              </td>
+              <td class="px-4 py-3">
+                <BaseStatusBadge v-if="patient.appointment_status" :status="patient.appointment_status" />
+                <span v-else class="text-xs text-gray-400 italic">No appointment</span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    class="text-xs font-semibold text-primary-700 hover:text-primary-900 hover:underline"
+                    @click="openPatientRecord(patient)"
+                  >
+                    View Record
+                  </button>
+
+                  <!-- When in active view: Archive button -->
+                  <button
+                    v-if="patientViewMode === 'active'"
+                    type="button"
+                    class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 hover:underline"
+                    title="Archive patient"
+                    @click="handleArchivePatient(patient)"
+                  >
+                    <LucideArchive class="h-3.5 w-3.5" />
+                    <span>Archive</span>
+                  </button>
+
+                  <!-- When in archive view: Restore & Permanently Delete options -->
+                  <template v-else>
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900 hover:underline"
+                      title="Restore patient record"
+                      @click="handleRestorePatient(patient)"
+                    >
+                      <LucideRotateCcw class="h-3.5 w-3.5" />
+                      <span>Restore</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800 hover:underline"
+                      title="Permanently delete patient record"
+                      @click="handlePermanentlyDeletePatient(patient)"
+                    >
+                      <LucideTrash2 class="h-3.5 w-3.5" />
+                      <span>Permanently Delete</span>
+                    </button>
+                  </template>
+                </div>
+              </td>
             </tr>
-            <tr v-if="filteredPatientRecords.length === 0"><td colspan="5" class="px-4 py-10 text-center text-gray-500">No patient records match your search.</td></tr>
+            <tr v-if="filteredPatientRecords.length === 0">
+              <td colspan="6" class="px-4 py-10 text-center text-gray-500">
+                {{ patientViewMode === 'active' ? 'No active patient records match your filter or search.' : 'No archived patient records found.' }}
+              </td>
+            </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- MODAL: ARCHIVE PATIENT CONFIRMATION -->
+    <div
+      v-if="pendingArchivePatient"
+      class="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Archive patient record"
+      @click.self="pendingArchivePatient = null"
+    >
+      <div class="modal-panel max-w-md space-y-4">
+        <div class="flex items-center gap-3 text-amber-600">
+          <div class="rounded-full bg-amber-100 p-2">
+            <LucideArchive class="h-6 w-6" />
+          </div>
+          <h3 class="text-lg font-bold text-gray-900">Archive Patient Record?</h3>
+        </div>
+        <p class="text-sm text-gray-600">
+          Are you sure you want to archive <strong>{{ pendingArchivePatient.user.name }}</strong>? The record will be moved to the archive section, where it can be restored or permanently deleted at any time.
+        </p>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            :disabled="archivingPatient"
+            @click="pendingArchivePatient = null"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-warning px-4 py-2"
+            :disabled="archivingPatient"
+            @click="confirmArchivePatient"
+          >
+            <LucideLoader2 v-if="archivingPatient" class="h-4 w-4 animate-spin" />
+            <LucideArchive v-else class="h-4 w-4" />
+            <span>Archive Patient</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -706,9 +944,10 @@ const confirmDelete = async () => {
       <div v-if="selectedPatientRecord" class="space-y-6">
         <div class="grid gap-4 rounded-xl bg-gray-50 p-4 text-sm sm:grid-cols-2">
           <div><p class="text-xs font-semibold uppercase text-gray-500">Patient</p><p class="mt-1 font-bold text-gray-900">{{ selectedPatientRecord.user.name }}</p><p class="text-gray-600">{{ selectedPatientRecord.user.email }}</p></div>
+          <div><p class="text-xs font-semibold uppercase text-gray-500">Handling Doctor</p><p class="mt-1 font-bold text-gray-900">{{ selectedPatientRecord.doctor ? `Dr. ${selectedPatientRecord.doctor.name}` : 'No doctor assigned' }}</p><p v-if="selectedPatientRecord.doctor" class="text-gray-600">{{ selectedPatientRecord.doctor.specialty_name || selectedPatientRecord.doctor.title || '' }}</p></div>
           <div><p class="text-xs font-semibold uppercase text-gray-500">Contact</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.phone || 'Not provided' }}</p></div>
           <div><p class="text-xs font-semibold uppercase text-gray-500">Demographics</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.gender || 'Not provided' }} · Born {{ selectedPatientRecord.date_of_birth || 'Not provided' }}</p></div>
-          <div><p class="text-xs font-semibold uppercase text-gray-500">Address</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.address || 'Not provided' }}</p></div>
+          <div class="sm:col-span-2"><p class="text-xs font-semibold uppercase text-gray-500">Address</p><p class="mt-1 text-gray-900">{{ selectedPatientRecord.address || 'Not provided' }}</p></div>
         </div>
         <div><h3 class="font-bold text-gray-900">Appointment History</h3><p class="text-xs text-gray-500">All recorded appointments for this patient.</p></div>
         <div v-if="loadingPatientHistory" class="flex justify-center py-8"><LucideLoader2 class="h-6 w-6 animate-spin text-primary-600" /></div>

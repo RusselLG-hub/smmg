@@ -40,7 +40,7 @@ watch(selectedDate, async (date, previousDate) => {
 })
 
 const submitReschedule = async () => {
-  if (!selectedSlot.value) return
+  if (!selectedSlot.value || appointment.value?.status !== 'pending') return
   saving.value = true
   errorMsg.value = null
   try {
@@ -62,6 +62,23 @@ const submitReschedule = async () => {
         <p class="section-label">Patient appointment</p><h1 class="mt-1 text-2xl font-bold text-slate-950">Reschedule Appointment</h1><p class="mt-2 text-sm text-slate-600">Choose a new available date and time for your consultation.</p>
       </header>
       <div v-if="loading" class="flex justify-center py-20"><LucideLoader2 class="h-8 w-8 animate-spin text-primary-600" /></div>
+      <div v-else-if="appointment && appointment.status === 'confirmed'" class="p-6 sm:p-8 space-y-4">
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 flex items-start gap-3">
+          <LucideAlertCircle class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p class="font-semibold text-sm">Reschedule Not Permitted</p>
+            <p class="text-xs mt-1 text-amber-700 leading-relaxed">
+              This appointment ({{ appointment.appointment_reference }}) has already been confirmed. Confirmed appointments cannot be rescheduled online. Please contact clinic reception or staff to arrange any changes.
+            </p>
+          </div>
+        </div>
+        <div class="flex justify-start">
+          <NuxtLink to="/patient/appointments" class="btn btn-secondary">
+            <LucideArrowLeft class="h-4 w-4" />
+            <span>Back to Appointments</span>
+          </NuxtLink>
+        </div>
+      </div>
       <form v-else class="space-y-6 p-6 sm:p-8" @submit.prevent="submitReschedule">
         <BaseAlertBanner v-if="successMsg" type="success" :message="successMsg" @dismiss="successMsg = null" />
         <BaseAlertBanner v-if="errorMsg" type="error" :message="errorMsg" @dismiss="errorMsg = null" />

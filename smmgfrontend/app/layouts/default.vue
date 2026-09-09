@@ -9,6 +9,7 @@ import {
   BarChart3,
   Bot,
   Calendar,
+  CalendarPlus,
   ClipboardList,
   Clock,
   HeartHandshake,
@@ -84,8 +85,9 @@ const handleLogout = async () => {
 // Navigation definitions
 const patientLinks = [
   { name: 'Dashboard', to: '/patient/dashboard', icon: LayoutDashboard },
-  { name: 'Find Doctors', to: '/doctors', icon: Search },
+  { name: 'Book Appointment', to: '/book', icon: CalendarPlus },
   { name: 'My Appointments', to: '/patient/appointments', icon: Calendar },
+  { name: 'Find Doctors', to: '/doctors', icon: Search },
   { name: 'My Profile', to: '/patient/profile', icon: User },
   { name: 'AI Assistant', to: '/ai-assistant', icon: Bot },
 ]

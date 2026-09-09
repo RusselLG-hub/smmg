@@ -60,59 +60,60 @@ const formatTime = (isoStr: string) => {
     <BasePageHeader
       title="Doctor Consultations"
       description="View full patient schedule and manage consultation status"
-    >
-      <template #actions>
-        <div class="flex flex-col sm:flex-row items-end gap-3 w-full sm:w-auto text-left">
-          <div class="w-full sm:w-auto">
-            <div class="flex items-center justify-between mb-1">
-              <label class="form-label mb-0 text-xs">Filter Date</label>
-              <button
-                v-if="selectedDate"
-                type="button"
-                class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline"
-                @click="selectedDate = ''"
-              >
-                Clear (Show All)
-              </button>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <input
-                v-model="selectedDate"
-                type="date"
-                class="form-input w-full sm:w-44 text-xs"
-              />
-              <button
-                type="button"
-                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
-                :class="selectedDate === todayStr ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                @click="selectedDate = (selectedDate === todayStr ? '' : todayStr)"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
-                :class="!selectedDate ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                @click="selectedDate = ''"
-              >
-                All Dates
-              </button>
-            </div>
-          </div>
+    />
 
-          <div class="w-full sm:w-40">
-            <label class="form-label mb-1 text-xs">Status</label>
-            <select v-model="selectedStatus" class="form-input w-full text-xs">
-              <option value="">All Statuses</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+    <!-- Filter Controls Card -->
+    <div class="card mb-6 p-5 sm:p-6 shadow-sm">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-2xl">
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0 text-xs">Filter Date</label>
+            <button
+              v-if="selectedDate"
+              type="button"
+              class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline"
+              @click="selectedDate = ''"
+            >
+              Clear (Show All)
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              v-model="selectedDate"
+              type="date"
+              class="form-input min-w-0 flex-1 text-xs"
+            />
+            <button
+              type="button"
+              class="px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
+              :class="selectedDate === todayStr ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+              @click="selectedDate = (selectedDate === todayStr ? '' : todayStr)"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              class="px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
+              :class="!selectedDate ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+              @click="selectedDate = ''"
+            >
+              All Dates
+            </button>
           </div>
         </div>
-      </template>
-    </BasePageHeader>
+
+        <div>
+          <label class="form-label text-xs mb-1.5">Status</label>
+          <select v-model="selectedStatus" class="form-input w-full text-xs">
+            <option value="">All Statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
     <!-- Active Filter Badges -->
     <div v-if="selectedDate || selectedStatus" class="mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600">

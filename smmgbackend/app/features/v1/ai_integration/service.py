@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -12,6 +13,8 @@ from app.features.v1.ai_integration import repository as ai_repository
 from app.features.v1.ai_integration import schema as ai_schema
 from app.features.v1.users import model as user_model
 from app.providers.ai_chat import AiProviderError, generate_chat_response
+
+logger = logging.getLogger(__name__)
 
 
 async def create_chat_session(
@@ -118,15 +121,13 @@ async def send_user_message(
         if exc.code == "provider_not_configured":
             assistant_reply = prompts.get_unconfigured_response(clean_content)
         else:
-            raise ServiceUnavailableException(
-                detail="AI assistant is temporarily unavailable. Please try again later."
-            ) from exc
+            logger.warning("AI provider error: %s. Using automated fallback response.", exc)
+            assistant_reply = prompts.get_unconfigured_response(clean_content)
     except Exception as exc:
-        raise ServiceUnavailableException(
-            detail="AI assistant is temporarily unavailable. Please try again later."
-        ) from exc
+        logger.warning("Unexpected AI error: %s. Using automated fallback response.", exc)
+        assistant_reply = prompts.get_unconfigured_response(clean_content)
 
-    if not assistant_reply.strip():
+    if not assistant_reply or not assistant_reply.strip():
         assistant_reply = prompts.OUT_OF_SCOPE_RESPONSE
 
     # 5. Persist Assistant Message

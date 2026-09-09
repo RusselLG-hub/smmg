@@ -78,34 +78,34 @@ const steps = computed(() => [
 </script>
 
 <template>
-  <!-- COMPACT PROGRESS TRACKER (FOR LIST CARDS) -->
+  <!-- COMPACT PROGRESS TRACKER (FOR LIST CARDS & DASHBOARD) -->
   <div v-if="compact" class="space-y-3">
-    <div class="flex items-center justify-between text-xs">
-      <span class="font-semibold text-gray-700">Booking Progress:</span>
+    <div class="flex items-center justify-between text-xs mb-1">
+      <span class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Booking Status</span>
       <span
         v-if="isCancelled"
-        class="inline-flex items-center gap-1 font-medium text-red-600"
+        class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200"
       >
         <LucideXCircle class="h-3.5 w-3.5" />
         Cancelled
       </span>
       <span
         v-else-if="isPending"
-        class="inline-flex items-center gap-1 font-semibold text-amber-600 animate-pulse"
+        class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200 animate-pulse"
       >
-        <LucideClock class="h-3.5 w-3.5 text-amber-500" />
-        Awaiting Clinic Staff Approval
+        <LucideClock class="h-3.5 w-3.5 text-amber-600" />
+        Awaiting Staff Review
       </span>
       <span
         v-else-if="isConfirmed"
-        class="inline-flex items-center gap-1 font-semibold text-teal-700"
+        class="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-700 border border-teal-200"
       >
         <LucideCheckCircle2 class="h-3.5 w-3.5 text-teal-600" />
         Confirmed by Clinic
       </span>
       <span
         v-else-if="isCompleted"
-        class="inline-flex items-center gap-1 font-semibold text-blue-700"
+        class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200"
       >
         <LucideCheckCircle2 class="h-3.5 w-3.5 text-blue-600" />
         Consultation Completed
@@ -114,22 +114,22 @@ const steps = computed(() => [
 
     <!-- Stepper bar -->
     <div class="relative flex items-center justify-between">
-      <!-- Background Connecting Line -->
-      <div class="absolute left-3 right-3 top-1/2 h-0.5 -translate-y-1/2 bg-gray-200" aria-hidden="true" />
-      <!-- Active Filled Progress Line -->
+      <!-- Background Connecting Line (Centered with the h-6 dots at top-3) -->
+      <div class="absolute left-3 right-3 top-3 h-0.5 -translate-y-1/2 bg-gray-200" aria-hidden="true" />
+      <!-- Active Filled Progress Line (Centered with the h-6 dots at top-3) -->
       <div
-        class="absolute left-3 top-1/2 h-0.5 -translate-y-1/2 transition-all duration-500"
-        :class="isCancelled ? 'bg-red-400' : 'bg-primary-600'"
+        class="absolute left-3 top-3 h-0.5 -translate-y-1/2 transition-all duration-500"
+        :class="isCancelled ? 'bg-red-400' : isConfirmed ? 'bg-teal-600' : 'bg-primary-600'"
         :style="{
           width: isCancelled
-            ? '33%'
+            ? 'calc((100% - 24px) * 0.3333)'
             : currentStepIndex === 1
-            ? '33%'
+            ? 'calc((100% - 24px) * 0.3333)'
             : currentStepIndex === 2
-            ? '66%'
+            ? 'calc((100% - 24px) * 0.6667)'
             : currentStepIndex === 3
-            ? '100%'
-            : '0%',
+            ? 'calc(100% - 24px)'
+            : '0px',
         }"
         aria-hidden="true"
       />
@@ -146,20 +146,35 @@ const steps = computed(() => [
             isCancelled && idx === 1
               ? 'bg-red-500 text-white ring-2 ring-red-200'
               : idx < currentStepIndex
-              ? 'bg-primary-600 text-white ring-2 ring-primary-100'
+              ? 'bg-teal-600 text-white ring-2 ring-teal-100'
               : idx === currentStepIndex
               ? isPending
                 ? 'bg-amber-500 text-white ring-4 ring-amber-100'
+                : isConfirmed
+                ? 'bg-teal-600 text-white ring-4 ring-teal-100'
                 : 'bg-primary-600 text-white ring-4 ring-primary-100'
               : 'bg-white text-gray-400 border-2 border-gray-300',
           ]"
         >
-          <LucideCheck v-if="idx < currentStepIndex && !isCancelled" class="h-3.5 w-3.5 stroke-[3]" />
-          <LucideX v-else-if="isCancelled && idx === 1" class="h-3.5 w-3.5 stroke-[3]" />
+          <LucideX v-if="isCancelled && idx === 1" class="h-3.5 w-3.5 stroke-[3]" />
           <LucideClock v-else-if="idx === 1 && isPending" class="h-3.5 w-3.5" />
+          <LucideCheck v-else-if="idx <= currentStepIndex && !isCancelled" class="h-3.5 w-3.5 stroke-[3]" />
           <span v-else>{{ idx + 1 }}</span>
         </div>
-        <span class="mt-1 text-[10px] font-medium text-gray-500 whitespace-nowrap">
+        <span
+          class="mt-1.5 text-[11px] whitespace-nowrap transition-colors"
+          :class="[
+            idx === currentStepIndex
+              ? isCancelled
+                ? 'font-bold text-red-600'
+                : isPending
+                ? 'font-bold text-amber-700'
+                : 'font-bold text-teal-800'
+              : idx < currentStepIndex
+              ? 'font-medium text-gray-700'
+              : 'font-medium text-gray-400',
+          ]"
+        >
           {{ step.name }}
         </span>
       </div>

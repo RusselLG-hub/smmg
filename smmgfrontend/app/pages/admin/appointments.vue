@@ -74,63 +74,64 @@ const formatTime = (isoStr: string) => {
     <BasePageHeader
       title="Clinic Appointments Directory"
       description="All clinic bookings and consultations with flexible doctor, status, and date filters"
-    >
-      <template #actions>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full text-left">
-          <div>
-            <label class="form-label mb-1 text-xs">Doctor</label>
-            <select v-model="filterDoctorId" class="form-input w-full text-xs">
-              <option value="">All Doctors</option>
-              <option v-for="d in doctorsStore.doctors" :key="d.id" :value="d.id">Dr. {{ d.user.name }}</option>
-            </select>
-          </div>
+    />
 
-          <div>
-            <label class="form-label mb-1 text-xs">Status</label>
-            <select v-model="filterStatus" class="form-input w-full text-xs">
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+    <!-- Filter Controls Card -->
+    <div class="card mb-6 p-5 sm:p-6 shadow-sm">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <label class="form-label text-xs mb-1.5">Doctor</label>
+          <select v-model="filterDoctorId" class="form-input w-full text-xs">
+            <option value="">All Doctors</option>
+            <option v-for="d in doctorsStore.doctors" :key="d.id" :value="d.id">Dr. {{ d.user.name }}</option>
+          </select>
+        </div>
 
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="form-label mb-0 text-xs">Filter Date</label>
-              <button
-                v-if="filterDate"
-                type="button"
-                class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline"
-                @click="filterDate = ''"
-              >
-                Clear (All Dates)
-              </button>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <input v-model="filterDate" type="date" class="form-input w-full text-xs" />
-              <button
-                type="button"
-                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
-                :class="filterDate === todayStr ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                @click="filterDate = (filterDate === todayStr ? '' : todayStr)"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap transition-colors"
-                :class="!filterDate ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                @click="filterDate = ''"
-              >
-                All
-              </button>
-            </div>
+        <div>
+          <label class="form-label text-xs mb-1.5">Status</label>
+          <select v-model="filterStatus" class="form-input w-full text-xs">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0 text-xs">Filter Date</label>
+            <button
+              v-if="filterDate"
+              type="button"
+              class="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline"
+              @click="filterDate = ''"
+            >
+              Clear (All Dates)
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input v-model="filterDate" type="date" class="form-input min-w-0 flex-1 text-xs" />
+            <button
+              type="button"
+              class="px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
+              :class="filterDate === todayStr ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+              @click="filterDate = (filterDate === todayStr ? '' : todayStr)"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              class="px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
+              :class="!filterDate ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+              @click="filterDate = ''"
+            >
+              All
+            </button>
           </div>
         </div>
-      </template>
-    </BasePageHeader>
+      </div>
+    </div>
 
     <!-- Active Filter Badges -->
     <div v-if="filterDoctorId || filterStatus || filterDate" class="mb-4 flex flex-wrap items-center gap-2 text-xs text-gray-600">

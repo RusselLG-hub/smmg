@@ -5,6 +5,13 @@ from app.features.v1.patients.model import PatientProfile
 from app.features.v1.patients.schema import PatientProfileUpdate
 
 
+async def get_by_id(db: AsyncSession, patient_id: str) -> PatientProfile | None:
+    result = await db.execute(
+        select(PatientProfile).where(PatientProfile.id == patient_id)
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_by_user_id(db: AsyncSession, user_id: str) -> PatientProfile | None:
     result = await db.execute(
         select(PatientProfile).where(PatientProfile.user_id == user_id)
@@ -41,3 +48,13 @@ async def update(
     await db.commit()
     await db.refresh(patient)
     return patient
+
+
+async def delete(db: AsyncSession, patient_id: str) -> bool:
+    patient = await get_by_id(db, patient_id)
+    if not patient:
+        return False
+    await db.delete(patient)
+    await db.commit()
+    return True
+

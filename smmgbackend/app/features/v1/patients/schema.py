@@ -4,6 +4,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.features.v1.users.schema import UserRead
 
 
+class PatientDoctorSummary(BaseModel):
+    id: str
+    name: str
+    title: str | None = None
+    specialty_name: str | None = None
+
+
 class PatientProfileRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -17,6 +24,10 @@ class PatientProfileRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     user: UserRead
+    doctor: PatientDoctorSummary | None = None
+    appointment_status: str | None = None
+    appointment_reference: str | None = None
+    all_statuses: list[str] = []
 
 
 class PatientProfileUpdate(BaseModel):

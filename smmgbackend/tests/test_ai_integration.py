@@ -89,6 +89,12 @@ class AiIntegrationTests(unittest.IsolatedAsyncioTestCase):
         headache_reply = prompts.get_unconfigured_response("I have a throbbing headache")
         self.assertIn("darkened", headache_reply)
 
+        sprain_reply = prompts.get_unconfigured_response("I twisted my ankle and have a sprain")
+        self.assertIn("R.I.C.E.", sprain_reply)
+
+        unknown_reply = prompts.get_unconfigured_response("Can you write a python script for a game?")
+        self.assertIn("I'm sorry, I don't have knowledge about that", unknown_reply)
+
 
 if __name__ == "__main__":
     unittest.main()
