@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { useDoctorsService } from '~/services/doctors'
 import { useDoctorsStore } from '~/stores/doctors'
 import { useSpecialtiesStore } from '~/stores/specialties'
 import { useClinicServicesStore } from '~/stores/clinicServices'
@@ -24,12 +26,16 @@ if (isEditing.value && ['doctors', 'staff'].includes(resource.value)) {
   throw createError({ statusCode: 404, statusMessage: 'Form not found' })
 }
 
+const authStore = useAuthStore()
+const doctorsService = useDoctorsService()
 const doctorsStore = useDoctorsStore()
 const specialtiesStore = useSpecialtiesStore()
 const servicesStore = useClinicServicesStore()
 const schedulesStore = useSchedulesStore()
 const usersService = useUsersService()
 const uploadService = useUploadService()
+
+const isDoctor = computed(() => authStore.user?.role === 'doctor')
 
 const loading = ref(true)
 const saving = ref(false)
@@ -49,7 +55,14 @@ const copy = computed(() => {
     staff: ['Add Staff Account', 'Create an account for a clinic staff member.'],
     specialties: [isEditing.value ? 'Edit Medical Specialty' : 'Add Medical Specialty', 'Maintain the specialty name, description, and visibility.'],
     services: [isEditing.value ? 'Edit Clinic Service' : 'Add Clinic Service', 'Maintain the service details, specialty, image, and visibility.'],
-    schedules: [isEditing.value ? 'Edit Working Schedule' : 'Add Working Schedule', 'Configure recurring doctor availability. Appointments use the standard clinic interval.'],
+    schedules: [
+      isEditing.value
+        ? (isDoctor.value ? 'Edit My Schedule' : 'Edit Doctor Schedule')
+        : (isDoctor.value ? 'Add Working Hours' : 'Add Doctor Schedule'),
+      isDoctor.value
+        ? 'Configure your weekly working hours and clinic availability.'
+        : 'Configure recurring doctor availability. Appointments use the standard clinic interval.',
+    ],
   }
   return labels[resource.value]
 })
@@ -58,17 +71,42 @@ const backTo = computed(() => resource.value === 'schedules' ? '/admin/schedules
 
 onMounted(async () => {
   try {
+    if (!authStore.user) {
+      await authStore.fetchUser()
+    }
+    if (authStore.user?.role === 'patient') {
+      await navigateTo('/patient/dashboard')
+      return
+    }
+    if (isDoctor.value && resource.value !== 'schedules') {
+      await navigateTo('/doctor/dashboard')
+      return
+    }
+
     if (['doctors', 'services'].includes(resource.value)) {
       await specialtiesStore.fetchSpecialties(false)
     }
     if (resource.value === 'schedules') {
-      await doctorsStore.fetchDoctors(false)
-      form.doctor_profile_id = String(route.query.doctor || '')
-      if (isEditing.value) {
-        await schedulesStore.fetchAllDoctorSchedules(doctorsStore.doctors.map(doctor => doctor.id))
-        const schedule = schedulesStore.schedules.find(item => item.id === recordId.value)
-        if (!schedule) throw new Error('Schedule not found')
-        Object.assign(form, schedule)
+      if (isDoctor.value) {
+        const myProfile = await doctorsService.getMyProfile()
+        form.doctor_profile_id = myProfile.id
+        if (isEditing.value) {
+          await schedulesStore.fetchDoctorSchedules(myProfile.id)
+          const schedule = schedulesStore.schedules.find(item => item.id === recordId.value)
+          if (!schedule || schedule.doctor_profile_id !== myProfile.id) {
+            throw new Error('Schedule not found or unauthorized')
+          }
+          Object.assign(form, schedule)
+        }
+      } else {
+        await doctorsStore.fetchDoctors(false)
+        form.doctor_profile_id = String(route.query.doctor || '')
+        if (isEditing.value) {
+          await schedulesStore.fetchAllDoctorSchedules(doctorsStore.doctors.map(doctor => doctor.id))
+          const schedule = schedulesStore.schedules.find(item => item.id === recordId.value)
+          if (!schedule) throw new Error('Schedule not found')
+          Object.assign(form, schedule)
+        }
       }
     } else if (resource.value === 'specialties' && isEditing.value) {
       await specialtiesStore.fetchSpecialties(false)
@@ -153,12 +191,12 @@ const handleSubmit = async () => {
 <template>
   <div class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
     <NuxtLink :to="backTo" class="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary-700 hover:text-primary-900">
-      <LucideArrowLeft class="h-4 w-4" /> Back to management
+      <LucideArrowLeft class="h-4 w-4" /> {{ resource === 'schedules' ? (isDoctor ? 'Back to my schedule' : 'Back to doctor schedule') : 'Back to management' }}
     </NuxtLink>
 
     <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <header class="border-b border-gray-200 bg-gradient-to-r from-primary-50 via-white to-teal-50 px-6 py-6 sm:px-8">
-        <p class="section-label">Admin management</p>
+        <p class="section-label">{{ resource === 'schedules' ? (isDoctor ? 'My schedule' : 'Doctor schedule') : 'Admin management' }}</p>
         <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">{{ copy[0] }}</h1>
         <p class="mt-2 text-sm text-slate-600">{{ copy[1] }}</p>
       </header>
@@ -201,7 +239,15 @@ const handleSubmit = async () => {
         </div>
 
         <div v-else class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div v-if="!isEditing" class="sm:col-span-2"><label class="form-label">Doctor</label><select v-model="form.doctor_profile_id" required class="form-input"><option value="" disabled>Select a doctor</option><option v-for="doctor in doctorsStore.doctors" :key="doctor.id" :value="doctor.id">Dr. {{ doctor.user.name }}</option></select></div>
+          <div v-if="!isEditing && !isDoctor" class="sm:col-span-2">
+            <label class="form-label">Doctor</label>
+            <select v-model="form.doctor_profile_id" required class="form-input">
+              <option value="" disabled>Select a doctor</option>
+              <option v-for="doctor in doctorsStore.doctors" :key="doctor.id" :value="doctor.id">
+                Dr. {{ doctor.user.name }}
+              </option>
+            </select>
+          </div>
           <div><label class="form-label">Weekday</label><select v-model="form.day_of_week" class="form-input"><option v-for="(day, index) in WEEKDAYS" :key="day" :value="index">{{ day }}</option></select></div>
           <div><label class="form-label">Start Time</label><input v-model="form.start_time" type="time" required class="form-input" /></div>
           <div><label class="form-label">End Time</label><input v-model="form.end_time" type="time" required class="form-input" /></div>

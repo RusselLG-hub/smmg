@@ -67,7 +67,7 @@ const formatTime = (isoStr: string) => {
           class="dashboard-action-muted text-sm"
         >
           <LucideClock class="h-4 w-4" />
-          <span>My Working Hours</span>
+          <span>My Schedule</span>
         </NuxtLink>
 
         <NuxtLink

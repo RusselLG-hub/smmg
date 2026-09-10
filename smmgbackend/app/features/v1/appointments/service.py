@@ -1,6 +1,7 @@
 import random
 import string
 from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,11 +42,13 @@ async def _validate_slot_against_schedule(
         raise BadRequestException(detail="Invalid date format. Expected YYYY-MM-DD.")
 
     req_time = _parse_time(time_str)
-    scheduled_at = datetime.combine(req_date, req_time, tzinfo=timezone.utc)
-    now_utc = datetime.now(timezone.utc)
+    now_clinic = datetime.now(ZoneInfo("Asia/Manila"))
+    today_clinic = now_clinic.date()
 
-    if scheduled_at <= now_utc:
+    if req_date < today_clinic or (req_date == today_clinic and req_time <= now_clinic.time()):
         raise BadRequestException(detail="Appointment time must be in the future.")
+
+    scheduled_at = datetime.combine(req_date, req_time, tzinfo=timezone.utc)
 
     # Check override
     override = await schedule_repository.get_override_by_date(db, doctor_id, date_str)

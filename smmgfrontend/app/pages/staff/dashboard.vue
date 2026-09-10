@@ -70,13 +70,23 @@ const formatTime = (isoStr: string) => {
         <p class="mt-1 text-sm text-slate-600">Manage today's clinic appointments and doctor availability</p>
       </div>
 
-      <NuxtLink
-        to="/admin/appointments"
-        class="dashboard-action-primary py-2.5 text-sm"
-      >
-        <LucideCalendarCheck class="h-4 w-4" />
-        <span>Master Appointments</span>
-      </NuxtLink>
+      <div class="flex flex-wrap gap-3">
+        <NuxtLink
+          to="/admin/schedules"
+          class="dashboard-action-muted py-2.5 text-sm"
+        >
+          <LucideClock class="h-4 w-4" />
+          <span>Doctor Schedule</span>
+        </NuxtLink>
+
+        <NuxtLink
+          to="/admin/appointments"
+          class="dashboard-action-primary py-2.5 text-sm"
+        >
+          <LucideCalendarCheck class="h-4 w-4" />
+          <span>Master Appointments</span>
+        </NuxtLink>
+      </div>
     </div>
 
     <!-- Alert Notifications -->

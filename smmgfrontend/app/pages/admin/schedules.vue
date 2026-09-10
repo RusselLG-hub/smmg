@@ -1,15 +1,36 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { useDoctorsService } from '~/services/doctors'
 import { useDoctorsStore } from '~/stores/doctors'
 import { useSchedulesStore } from '~/stores/schedules'
 import { WEEKDAYS } from '~~/shared/types/Schedule'
+import type { Doctor } from '~~/shared/types/Doctor'
+import type { DoctorSchedule } from '~~/shared/types/Schedule'
 
 definePageMeta({
   middleware: 'auth',
 })
 
+const authStore = useAuthStore()
+const doctorsService = useDoctorsService()
 const doctorsStore = useDoctorsStore()
 const schedulesStore = useSchedulesStore()
+
+const isDoctor = computed(() => authStore.user?.role === 'doctor')
+const isAdminOrStaff = computed(() => ['admin', 'staff'].includes(authStore.user?.role || ''))
+const myDoctorProfile = ref<Doctor | null>(null)
+
+const pageTitle = computed(() => (isDoctor.value ? 'My Schedule' : 'Doctor Schedule'))
+const pageDescription = computed(() =>
+  isDoctor.value
+    ? 'Configure your weekly working hours and clinic availability'
+    : 'Configure weekly working hours for clinic doctors',
+)
+
+useHead({
+  title: () => `${pageTitle.value} - SMMG`,
+})
 
 const ALL_DOCTORS = 'all'
 const selectedDoctorId = ref<string>(ALL_DOCTORS)
@@ -28,16 +49,47 @@ const form = reactive({
 })
 
 onMounted(async () => {
-  await doctorsStore.fetchDoctors(false)
-  await schedulesStore.fetchAllDoctorSchedules(doctorsStore.doctors.map(doctor => doctor.id))
+  if (!authStore.user) {
+    await authStore.fetchUser()
+  }
+
+  if (authStore.user?.role === 'patient') {
+    await navigateTo('/patient/dashboard')
+    return
+  }
+
+  if (isDoctor.value) {
+    try {
+      const profile = await doctorsService.getMyProfile()
+      myDoctorProfile.value = profile
+      selectedDoctorId.value = profile.id
+      await schedulesStore.fetchDoctorSchedules(profile.id)
+    } catch (err: any) {
+      actionError.value = err?.data?.detail || 'Failed to load doctor profile'
+    }
+  } else {
+    await doctorsStore.fetchDoctors(false)
+    await schedulesStore.fetchAllDoctorSchedules(doctorsStore.doctors.map(doctor => doctor.id))
+  }
 })
 
 watch(selectedDoctorId, async (newId) => {
+  if (isDoctor.value) return
   if (newId === ALL_DOCTORS) {
     await schedulesStore.fetchAllDoctorSchedules(doctorsStore.doctors.map(doctor => doctor.id))
   } else if (newId) {
     await schedulesStore.fetchDoctorSchedules(newId)
   }
+})
+
+const addScheduleUrl = computed(() => {
+  if (isDoctor.value) {
+    return myDoctorProfile.value ? `/admin/forms/schedules/new?doctor=${myDoctorProfile.value.id}` : '/admin/forms/schedules/new'
+  }
+  if (selectedDoctorId.value !== ALL_DOCTORS) {
+    return `/admin/forms/schedules/new?doctor=${selectedDoctorId.value}`
+  }
+  return '/admin/forms/schedules/new'
 })
 
 const getDoctorName = (doctorProfileId: string) => {
@@ -70,7 +122,12 @@ const openEditSchedule = (schedule: DoctorSchedule) => {
 const handleCreateSchedule = async () => {
   actionError.value = null
   actionSuccess.value = null
-  if (!editingScheduleId.value && (!selectedDoctorId.value || selectedDoctorId.value === ALL_DOCTORS)) {
+
+  const targetDoctorId = isDoctor.value
+    ? myDoctorProfile.value?.id
+    : (selectedDoctorId.value === ALL_DOCTORS ? null : selectedDoctorId.value)
+
+  if (!editingScheduleId.value && !targetDoctorId) {
     actionError.value = 'Please select a doctor first'
     return
   }
@@ -87,7 +144,7 @@ const handleCreateSchedule = async () => {
       actionSuccess.value = 'Working schedule updated successfully'
     } else {
       await schedulesStore.createSchedule({
-        doctor_profile_id: selectedDoctorId.value,
+        doctor_profile_id: targetDoctorId!,
         ...scheduleData,
       })
       actionSuccess.value = 'Working schedule added successfully'
@@ -129,11 +186,11 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <BasePageHeader
-      title="Doctor Working Schedules"
-      description="Configure weekly working hours for doctors"
+      :title="pageTitle"
+      :description="pageDescription"
     >
       <template #actions>
-        <div class="w-full sm:w-72 text-left">
+        <div v-if="isAdminOrStaff" class="w-full sm:w-72 text-left">
           <label class="form-label mb-1">Select Doctor Profile</label>
           <select
             v-model="selectedDoctorId"
@@ -175,14 +232,13 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
           <div>
             <h2 class="text-lg font-bold text-gray-900">Weekly Schedule</h2>
             <p class="text-xs text-gray-500">
-              {{ selectedDoctorId === ALL_DOCTORS ? 'Recurring availability slots for all doctors' : 'Recurring availability slots for selected doctor' }}
+              {{ isDoctor ? 'Your recurring weekly availability slots' : (selectedDoctorId === ALL_DOCTORS ? 'Recurring availability slots for all doctors' : 'Recurring availability slots for selected doctor') }}
             </p>
           </div>
         </div>
 
         <NuxtLink
-          v-if="selectedDoctorId !== ALL_DOCTORS"
-          :to="`/admin/forms/schedules/new?doctor=${selectedDoctorId}`"
+          :to="addScheduleUrl"
           class="btn btn-primary"
         >
           <LucidePlus class="h-4 w-4" />
@@ -199,7 +255,7 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
       <BaseEmptyState
         v-else-if="schedulesStore.schedules.length === 0"
         title="No Schedules Configured"
-        :description="selectedDoctorId === ALL_DOCTORS ? 'No doctor schedules have been configured yet.' : `Click 'Add Working Hours' to define doctor availability.`"
+        :description="isDoctor ? 'Click \'Add Working Hours\' to define your availability.' : (selectedDoctorId === ALL_DOCTORS ? 'No doctor schedules have been configured yet.' : 'Click \'Add Working Hours\' to define doctor availability.')"
       >
         <template #icon>
           <LucideCalendarX class="h-10 w-10 text-gray-400" />
@@ -211,7 +267,7 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
         <table class="w-full text-left text-sm text-gray-700">
           <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 font-semibold">
             <tr>
-              <th v-if="selectedDoctorId === ALL_DOCTORS" class="px-4 py-3">Doctor</th>
+              <th v-if="isAdminOrStaff && selectedDoctorId === ALL_DOCTORS" class="px-4 py-3">Doctor</th>
               <th class="px-4 py-3">Day of Week</th>
               <th class="px-4 py-3">Working Time</th>
               <th class="px-4 py-3">Status</th>
@@ -220,7 +276,7 @@ const handleToggleActive = async (id: string, currentActive: boolean) => {
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-for="s in schedulesStore.schedules" :key="s.id" class="hover:bg-gray-50">
-              <td v-if="selectedDoctorId === ALL_DOCTORS" class="px-4 py-3 font-semibold text-gray-900">
+              <td v-if="isAdminOrStaff && selectedDoctorId === ALL_DOCTORS" class="px-4 py-3 font-semibold text-gray-900">
                 {{ getDoctorName(s.doctor_profile_id) }}
               </td>
               <td class="px-4 py-3 font-semibold text-gray-900">

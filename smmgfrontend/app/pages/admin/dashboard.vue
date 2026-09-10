@@ -316,7 +316,7 @@ const handleToggleUserActive = async (userId: string) => {
               class="card card-hover flex items-center justify-between group p-5"
             >
               <div>
-                <div class="text-xs text-gray-500 font-medium">Doctor Working Hours</div>
+                <div class="text-xs text-gray-500 font-medium">Doctor Schedule</div>
                 <div class="text-sm font-bold text-gray-900 mt-2">Manage Schedules &rarr;</div>
               </div>
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 transition-colors group-hover:bg-primary-600 group-hover:text-white">

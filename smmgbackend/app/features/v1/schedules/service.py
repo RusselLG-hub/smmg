@@ -1,5 +1,6 @@
 from calendar import monthrange
 from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,7 @@ from app.features.v1.schedules import schema as schedule_schema
 from app.features.v1.users import model as user_model
 
 APPOINTMENT_SLOT_MINUTES = 30
+CLINIC_TIMEZONE = ZoneInfo("Asia/Manila")
 
 
 def _parse_time(time_str: str) -> time:
@@ -151,12 +153,13 @@ async def get_doctor_availability(
     except ValueError:
         raise BadRequestException(detail="Invalid date format. Expected YYYY-MM-DD.")
 
-    now_utc = datetime.now(timezone.utc)
-    today_utc = now_utc.date()
+    now_clinic = datetime.now(CLINIC_TIMEZONE)
+    today_clinic = now_clinic.date()
+    now_time_clinic = now_clinic.time()
 
     day_of_week = req_date.weekday()  # 0=Monday, 6=Sunday
 
-    if req_date < today_utc:
+    if req_date < today_clinic:
         return schedule_schema.AvailabilityResponse(
             doctor_id=doctor_id,
             date=date_str,
@@ -234,7 +237,7 @@ async def get_doctor_availability(
 
             # Filter out past slots for today AND occupied active appointment slots
             is_valid_time = True
-            if req_date == today_utc and curr_datetime <= now_utc:
+            if req_date == today_clinic and curr_datetime.time() <= now_time_clinic:
                 is_valid_time = False
 
             if is_valid_time and slot_start_str not in occupied_slot_starts:
@@ -252,7 +255,7 @@ async def get_doctor_availability(
         doctor_id=doctor_id,
         date=date_str,
         day_of_week=day_of_week,
-        is_working_day=len(all_slots) > 0,
+        is_working_day=True,
         slots=all_slots,
     )
 

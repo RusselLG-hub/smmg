@@ -7,11 +7,13 @@ import { useDoctorsStore } from '~/stores/doctors'
 import { useSpecialtiesStore } from '~/stores/specialties'
 import { useClinicServicesStore } from '~/stores/clinicServices'
 import { useSchedulesStore } from '~/stores/schedules'
+import { useSchedulesService } from '~/services/schedules'
 import { usePatientService } from '~/services/patient'
 import { normalizePhilippineMobile } from '~/utils/phone'
 import type { Doctor } from '~~/shared/types/Doctor'
 import type { AppointmentRead } from '~~/shared/types/Appointment'
-import type { TimeSlot } from '~~/shared/types/Schedule'
+import { WEEKDAYS } from '~~/shared/types/Schedule'
+import type { DoctorSchedule, TimeSlot } from '~~/shared/types/Schedule'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -23,7 +25,10 @@ const doctorsStore = useDoctorsStore()
 const specialtiesStore = useSpecialtiesStore()
 const servicesStore = useClinicServicesStore()
 const schedulesStore = useSchedulesStore()
+const schedulesService = useSchedulesService()
 const patientService = usePatientService()
+
+const allDoctorSchedulesMap = ref<Record<string, DoctorSchedule[]>>({})
 
 // Stepper state: 1 through 6 (Same structure as poiseathome)
 const step = ref<number>(1)
@@ -132,6 +137,94 @@ const formatTime12h = (timeStr: string) => {
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`
 }
 
+const formatQuickDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if (!year || !month || !day) return dateStr
+  const d = new Date(year, month - 1, day)
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+const getDoctorWorkingDaysText = (doctorId: string) => {
+  const schs = allDoctorSchedulesMap.value[doctorId]?.filter(s => s.is_active) || []
+  if (!schs.length) return 'No schedule set'
+  const days = schs.map(s => WEEKDAYS[s.day_of_week]).filter(Boolean)
+  const uniqueDays = Array.from(new Set(days))
+  return uniqueDays.join(', ')
+}
+
+const selectedDoctorSchedules = computed(() => {
+  if (!selectedDoctor.value) return []
+  return allDoctorSchedulesMap.value[selectedDoctor.value.id]?.filter(s => s.is_active) || []
+})
+
+const workingDaysSummary = computed(() => {
+  if (!selectedDoctorSchedules.value.length) return 'No clinic hours configured'
+  return selectedDoctorSchedules.value
+    .map(s => `${WEEKDAYS[s.day_of_week]} (${s.start_time}–${s.end_time})`)
+    .join(', ')
+})
+
+const isDoctorWorkingOnDate = (dateStr: string) => {
+  if (!dateStr || !selectedDoctor.value) return false
+  const schs = selectedDoctorSchedules.value
+  if (!schs.length) return false
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if (!year || !month || !day) return false
+  const d = new Date(year, month - 1, day)
+  const scheduleDay = (d.getDay() + 6) % 7
+  return schs.some(s => s.day_of_week === scheduleDay)
+}
+
+const getUpcomingWorkingDates = (doctorId: string, maxCount = 4): string[] => {
+  const schs = allDoctorSchedulesMap.value[doctorId]?.filter(s => s.is_active) || []
+  if (!schs.length) return []
+  const workingDaySet = new Set(schs.map(s => s.day_of_week))
+
+  const dates: string[] = []
+  const today = new Date()
+  const nowH = String(today.getHours()).padStart(2, '0')
+  const nowM = String(today.getMinutes()).padStart(2, '0')
+  const nowTime = `${nowH}:${nowM}`
+
+  for (let offset = 0; offset < 60 && dates.length < maxCount; offset++) {
+    const d = new Date()
+    d.setDate(d.getDate() + offset)
+    const yr = d.getFullYear()
+    const mo = String(d.getMonth() + 1).padStart(2, '0')
+    const da = String(d.getDate()).padStart(2, '0')
+    const dateStr = `${yr}-${mo}-${da}`
+
+    const scheduleDay = (d.getDay() + 6) % 7
+    if (workingDaySet.has(scheduleDay)) {
+      if (offset === 0) {
+        const todaySchs = schs.filter(s => s.day_of_week === scheduleDay)
+        if (todaySchs.some(s => s.end_time > nowTime)) {
+          dates.push(dateStr)
+        }
+      } else {
+        dates.push(dateStr)
+      }
+    }
+  }
+  return dates
+}
+
+const upcomingWorkingDates = computed(() => {
+  if (!selectedDoctor.value) return []
+  return getUpcomingWorkingDates(selectedDoctor.value.id, 4)
+})
+
+const nextAvailableWorkingDate = computed(() => {
+  if (!selectedDoctor.value) return null
+  const dates = getUpcomingWorkingDates(selectedDoctor.value.id, 1)
+  return dates[0] || null
+})
+
 // Computed: Filtered Doctors
 const filteredDoctors = computed(() => {
   return doctorsStore.doctors.filter(doc => {
@@ -181,6 +274,19 @@ onMounted(async () => {
       servicesStore.fetchServices(true),
     ])
 
+    // Pre-load schedules for doctors to show working day badges
+    try {
+      const schResults = await Promise.all(
+        doctorsStore.doctors.map(async (doc) => {
+          const schs = await schedulesService.getDoctorSchedules(doc.id)
+          return [doc.id, schs] as const
+        }),
+      )
+      allDoctorSchedulesMap.value = Object.fromEntries(schResults)
+    } catch {
+      // non-blocking
+    }
+
     // Load Patient Profile
     try {
       const profile = await patientService.getMyProfile()
@@ -213,7 +319,14 @@ onMounted(async () => {
       }
     }
 
-    selectedDate.value = qDate && qDate >= getTodayStr() ? qDate : getTodayStr()
+    if (qDate && qDate >= getTodayStr()) {
+      selectedDate.value = qDate
+    } else if (selectedDoctor.value && nextAvailableWorkingDate.value) {
+      selectedDate.value = nextAvailableWorkingDate.value
+    } else {
+      selectedDate.value = getTodayStr()
+    }
+
     if (qTime) selectedTime.value = qTime
     if (qService) selectedServiceId.value = qService
 
@@ -262,8 +375,24 @@ watch([selectedDoctor, selectedDate], async ([newDoc, newDate]) => {
 
 const handleSelectDoctor = async (doc: Doctor) => {
   selectedDoctor.value = doc
-  if (!selectedDate.value) selectedDate.value = getTodayStr()
   selectedTime.value = ''
+
+  if (!allDoctorSchedulesMap.value[doc.id]) {
+    try {
+      const schs = await schedulesService.getDoctorSchedules(doc.id)
+      allDoctorSchedulesMap.value[doc.id] = schs
+    } catch {
+      allDoctorSchedulesMap.value[doc.id] = []
+    }
+  }
+
+  const nextDate = nextAvailableWorkingDate.value
+  if (nextDate && (!selectedDate.value || !isDoctorWorkingOnDate(selectedDate.value) || (selectedDate.value === getTodayStr() && !upcomingWorkingDates.value.includes(getTodayStr())))) {
+    selectedDate.value = nextDate
+  } else if (!selectedDate.value) {
+    selectedDate.value = nextDate || getTodayStr()
+  }
+
   await loadSlots(doc.id, selectedDate.value)
 }
 
@@ -739,6 +868,15 @@ const handlePrintSlip = () => {
                   <p class="text-xs font-semibold text-teal-700">{{ doc.specialty?.name || 'Specialist' }}</p>
                   <p v-if="doc.title" class="text-[11px] text-gray-500">{{ doc.title }}</p>
                   <p v-if="doc.bio" class="text-xs text-gray-600 line-clamp-2 mt-1">{{ doc.bio }}</p>
+                  <div class="mt-2 flex items-center gap-1.5 text-[11px]">
+                    <span
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium"
+                      :class="allDoctorSchedulesMap[doc.id]?.length ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-gray-100 text-gray-600 border border-gray-200'"
+                    >
+                      <LucideCalendar class="w-3 h-3 text-emerald-600" />
+                      {{ getDoctorWorkingDaysText(doc.id) }}
+                    </span>
+                  </div>
                 </div>
               </button>
             </div>
@@ -755,8 +893,22 @@ const handlePrintSlip = () => {
                 <p class="text-xs text-gray-500">Select a date to check real-time consultation slot availability.</p>
               </div>
 
-              <!-- Quick Date presets -->
-              <div class="flex items-center gap-1.5">
+              <!-- Quick Date presets (Doctor's upcoming working days) -->
+              <div v-if="upcomingWorkingDates.length > 0" class="flex flex-wrap items-center gap-1.5">
+                <button
+                  v-for="wDate in upcomingWorkingDates"
+                  :key="wDate"
+                  type="button"
+                  class="px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors"
+                  :class="selectedDate === wDate ? 'bg-primary-600 text-white border-primary-600 shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'"
+                  @click="selectedDate = wDate"
+                >
+                  {{ formatQuickDate(wDate) }}
+                  <span v-if="wDate === getTodayStr()" class="ml-1 text-[10px] opacity-80">(Today)</span>
+                  <span v-else-if="wDate === getFutureDateStr(1)" class="ml-1 text-[10px] opacity-80">(Tomorrow)</span>
+                </button>
+              </div>
+              <div v-else class="flex items-center gap-1.5">
                 <button
                   type="button"
                   class="px-2.5 py-1 text-xs font-semibold rounded-lg border transition-colors"
@@ -784,6 +936,24 @@ const handlePrintSlip = () => {
               </div>
             </div>
 
+            <!-- Doctor Clinic Schedule Info Banner -->
+            <div class="bg-white rounded-xl p-3 border border-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 text-gray-700">
+                <LucideClock class="w-4 h-4 text-primary-600 shrink-0" />
+                <span class="font-medium text-gray-500">Clinic Schedule:</span>
+                <span class="font-semibold text-gray-900">{{ workingDaysSummary }}</span>
+              </div>
+              <div v-if="nextAvailableWorkingDate && selectedDate !== nextAvailableWorkingDate" class="shrink-0">
+                <button
+                  type="button"
+                  class="text-xs text-primary-700 font-bold hover:underline inline-flex items-center gap-1"
+                  @click="selectedDate = nextAvailableWorkingDate"
+                >
+                  Jump to next working day ({{ formatQuickDate(nextAvailableWorkingDate) }}) →
+                </button>
+              </div>
+            </div>
+
             <!-- Date Picker -->
             <div class="max-w-xs">
               <label class="block text-xs font-semibold text-gray-700 mb-1">Select Consultation Date</label>
@@ -806,8 +976,33 @@ const handlePrintSlip = () => {
                 <span>Loading availability slots...</span>
               </div>
 
-              <div v-else-if="!isWorkingDay || slots.length === 0" class="p-5 text-center bg-orange-50 text-orange-800 rounded-xl border border-orange-200 text-xs">
-                No available consultation slots on this date. Doctor may have no clinic hours or all slots are booked. Please select another date.
+              <div v-else-if="!isWorkingDay || slots.length === 0" class="p-6 text-center bg-amber-50/80 rounded-2xl border border-amber-200 text-amber-900 space-y-3">
+                <div class="w-10 h-10 mx-auto rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <LucideCalendarOff class="w-5 h-5" />
+                </div>
+                <div>
+                  <h5 class="font-bold text-sm">No Available Slots on {{ formatDateLong(selectedDate) }}</h5>
+                  <p v-if="!selectedDoctorSchedules.length" class="text-xs text-amber-800 mt-1">
+                    Dr. {{ selectedDoctor.user.name }} does not currently have clinic hours configured.
+                  </p>
+                  <p v-else-if="!isDoctorWorkingOnDate(selectedDate)" class="text-xs text-amber-800 mt-1">
+                    Dr. {{ selectedDoctor.user.name }} does not hold clinic on this day of the week.
+                    <span class="block mt-0.5 font-medium">Regular clinic days: {{ workingDaysSummary }}</span>
+                  </p>
+                  <p v-else class="text-xs text-amber-800 mt-1">
+                    All consultation hours for this date have either passed or have been fully booked.
+                  </p>
+                </div>
+                <div v-if="nextAvailableWorkingDate && nextAvailableWorkingDate !== selectedDate" class="pt-1">
+                  <button
+                    type="button"
+                    class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl transition shadow-sm inline-flex items-center gap-1.5"
+                    @click="selectedDate = nextAvailableWorkingDate"
+                  >
+                    <LucideCalendarCheck class="w-3.5 h-3.5" />
+                    <span>Jump to Next Available Date ({{ formatQuickDate(nextAvailableWorkingDate) }})</span>
+                  </button>
+                </div>
               </div>
 
               <div v-else class="space-y-4">

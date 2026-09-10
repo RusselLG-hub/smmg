@@ -209,7 +209,7 @@ const formatTime = (isoStr: string) => {
       </div>
       <h3 class="text-lg font-bold text-gray-900">No appointments found</h3>
       <p class="mt-1 text-sm text-gray-500">You have no {{ activeTab }} consultations recorded.</p>
-      <NuxtLink v-if="activeTab === 'upcoming'" to="/book" class="btn bg-emerald-600 text-white hover:bg-emerald-700 mt-5 inline-flex items-center gap-2">
+      <NuxtLink v-if="activeTab === 'upcoming'" to="/book" class="btn bg-emerald-600 text-white hover:bg-emerald-700 px-6 py-2.5 mt-5 inline-flex items-center gap-2 shadow-sm hover:shadow-md transition-all">
         <LucideCalendarPlus class="h-4 w-4" />
         <span>Book your consultation</span>
       </NuxtLink>

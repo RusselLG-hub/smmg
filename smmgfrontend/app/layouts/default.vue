@@ -104,6 +104,7 @@ const doctorLinks = [
 const staffLinks = [
   { name: 'Dashboard', to: '/staff/dashboard', icon: LayoutDashboard },
   { name: 'Appointments', to: '/admin/appointments', icon: Calendar },
+  { name: 'Doctor Schedule', to: '/admin/schedules', icon: Clock },
   { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
   { name: 'My Profile', to: '/account/profile', icon: User },
 ]
@@ -111,7 +112,7 @@ const staffLinks = [
 const adminLinks = [
   { name: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Appointments', to: '/admin/appointments', icon: Calendar },
-  { name: 'Schedules', to: '/admin/schedules', icon: Clock },
+  { name: 'Doctor Schedule', to: '/admin/schedules', icon: Clock },
   { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
   { name: 'AI Monitoring', to: '/admin/ai-monitoring', icon: Bot },
   { name: 'My Profile', to: '/account/profile', icon: User },
