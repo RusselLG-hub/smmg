@@ -2,6 +2,7 @@
 
 from app.features.v1.ai_integration.model import AIChatMessage, AIChatSession
 from app.features.v1.appointments.model import Appointment
+from app.features.v1.audit_logs.model import AuditLog
 from app.features.v1.auth.model import VerificationCode
 from app.features.v1.doctors.model import DoctorProfile
 from app.features.v1.patients.model import PatientProfile
@@ -22,4 +23,5 @@ __all__ = [
     "Appointment",
     "AIChatSession",
     "AIChatMessage",
+    "AuditLog",
 ]

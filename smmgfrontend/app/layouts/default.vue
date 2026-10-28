@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Search,
   Settings,
+  Shield,
   Stethoscope,
   User,
 } from '@lucide/vue'
@@ -115,6 +116,7 @@ const adminLinks = [
   { name: 'Doctor Schedule', to: '/admin/schedules', icon: Clock },
   { name: 'Reports', to: '/admin/reports', icon: BarChart3 },
   { name: 'AI Monitoring', to: '/admin/ai-monitoring', icon: Bot },
+  { name: 'Audit Logs', to: '/admin/audit-logs', icon: Shield },
   { name: 'My Profile', to: '/account/profile', icon: User },
 ]
 

@@ -16,6 +16,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.limiter import limiter
 from app.features.v1.ai_integration import router as ai_router
 from app.features.v1.appointments import router as appointments_router
+from app.features.v1.audit_logs import router as audit_router
 from app.features.v1.auth import router as auth_router
 from app.features.v1.dashboard import router as dashboard_router
 from app.features.v1.notifications import router as notifications_router
@@ -66,6 +67,7 @@ app.include_router(notifications_router.router)
 app.include_router(reports_router.router)
 app.include_router(ai_router.router)
 app.include_router(uploads_router.router)
+app.include_router(audit_router.router)
 
 
 if __name__ == "__main__":

@@ -66,6 +66,25 @@ async def login(
 ):
     user, token = await auth_service.login(db, login_data)
 
+    try:
+        from app.features.v1.audit_logs.service import log_event
+        ip = request.client.host if request.client else "unknown"
+        user_agent = request.headers.get("user-agent")
+        await log_event(
+            db,
+            action="AUTH_LOGIN",
+            description=f"User {user.name} logged in",
+            user_id=user.id,
+            user_name=user.name,
+            user_role=user.role,
+            ip_address=ip,
+            user_agent=user_agent,
+            properties={"email": user.email, "role": user.role},
+        )
+        await db.commit()
+    except Exception:
+        pass
+
     # Remove the legacy API-host-only cookie before issuing the shared
     # frontend/API domain cookie.
     response.delete_cookie(key=settings.AUTH_COOKIE_NAME)

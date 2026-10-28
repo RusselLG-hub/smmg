@@ -24,6 +24,23 @@ async def create_staff_user(
     user = await user_repository.create_user(
         db=db, user_create=data, hashed_password=hashed_pw, role="staff"
     )
+
+    try:
+        from app.features.v1.audit_logs.service import log_event
+        await log_event(
+            db,
+            action="USER_CREATE_STAFF",
+            description=f"Created staff account: {user.name} ({user.email})",
+            user_id=user.id,
+            user_name=user.name,
+            user_role=user.role,
+            auditable_type="User",
+            auditable_id=user.id,
+            properties={"email": user.email, "role": user.role},
+        )
+    except Exception:
+        pass
+
     return user_schema.UserRead.model_validate(user)
 
 
@@ -33,4 +50,22 @@ async def toggle_user_active(
     user = await user_repository.toggle_user_active(db, user_id)
     if not user:
         raise NotFoundException(detail="User not found")
+
+    try:
+        from app.features.v1.audit_logs.service import log_event
+        status_str = "activated" if user.is_active else "deactivated"
+        await log_event(
+            db,
+            action="USER_STATUS_CHANGE",
+            description=f"User {user.name} was {status_str}",
+            user_id=user.id,
+            user_name=user.name,
+            user_role=user.role,
+            auditable_type="User",
+            auditable_id=user.id,
+            properties={"is_active": user.is_active},
+        )
+    except Exception:
+        pass
+
     return user_schema.UserRead.model_validate(user)
