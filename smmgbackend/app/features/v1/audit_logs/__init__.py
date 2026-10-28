@@ -1,4 +1,3 @@
-from app.features.v1.audit_logs.model import AuditLog
-from app.features.v1.audit_logs.router import router
+from app.features.v1.audit_logs import model, repository, router, schema, service
 
-__all__ = ["AuditLog", "router"]
+__all__ = ["model", "repository", "router", "schema", "service"]

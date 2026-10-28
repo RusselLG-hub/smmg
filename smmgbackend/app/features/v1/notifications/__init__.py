@@ -1,3 +1,3 @@
-from app.features.v1.notifications import service, templates
+from app.features.v1.notifications import repository, router, schema, service, templates
 
-__all__ = ["service", "templates"]
+__all__ = ["repository", "router", "schema", "service", "templates"]
