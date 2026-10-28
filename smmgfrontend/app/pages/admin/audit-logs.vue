@@ -1,21 +1,5 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import {
-  LucideActivity,
-  LucideCalendar,
-  LucideChevronLeft,
-  LucideChevronRight,
-  LucideClock,
-  LucideEye,
-  LucideFileText,
-  LucideFilter,
-  LucideLaptop,
-  LucideRefreshCw,
-  LucideSearch,
-  LucideShield,
-  LucideUser,
-  LucideX,
-} from 'lucide-vue-next'
 import { useAuditLogService, type AuditLogItem } from '~/services/auditLogs'
 
 definePageMeta({ middleware: 'auth' })
