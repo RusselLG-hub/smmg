@@ -1,7 +1,9 @@
+from datetime import datetime, timezone
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import (
     BadRequestException,
     ConflictException,
@@ -122,6 +124,32 @@ async def verify_email(
     db: AsyncSession, verify_data: auth_schema.VerifyEmailRequest
 ) -> user_model.User:
     user = await user_repository.get_by_email(db, verify_data.email)
+
+    if settings.is_local_jmeter_bypass and verify_data.code == settings.DEV_BYPASS_OTP_CODE:
+        if user:
+            active_code = await auth_repository.get_latest_active_code(
+                db, user_id=user.id, purpose="email_verification"
+            )
+            if active_code:
+                await auth_repository.mark_code_consumed(db, active_code.id)
+            if not user.is_email_verified:
+                updated_user = await user_repository.mark_email_verified(db, user.id)
+                return updated_user or user
+            return user
+
+        now = datetime.now(timezone.utc)
+        return user_model.User(
+            id="dev-bypass-user",
+            email=verify_data.email.lower(),
+            name="Test User",
+            hashed_password="",
+            role="patient",
+            is_active=True,
+            is_email_verified=True,
+            created_at=now,
+            updated_at=now,
+        )
+
     if not user:
         raise BadRequestException(detail="Invalid verification request")
 
@@ -152,7 +180,7 @@ async def login(
     if not verify_password(login_data.password, user.hashed_password):
         raise UnauthorizedException(detail="Invalid email or password")
 
-    if not user.is_email_verified:
+    if not user.is_email_verified and not settings.is_local_jmeter_bypass:
         raise ForbiddenException(detail="Email not verified. Please verify your email before logging in.")
 
     if not user.is_active:
@@ -218,12 +246,14 @@ async def confirm_password_change(
     active_code = await auth_repository.get_latest_active_code(
         db, user_id=user.id, purpose="password_change"
     )
-    if not active_code:
-        raise BadRequestException(detail="Verification code has expired or is invalid")
-    if not verify_password(data.code, active_code.code_hash):
-        raise BadRequestException(detail="Invalid verification code")
+    if not (settings.is_local_jmeter_bypass and data.code == settings.DEV_BYPASS_OTP_CODE):
+        if not active_code:
+            raise BadRequestException(detail="Verification code has expired or is invalid")
+        if not verify_password(data.code, active_code.code_hash):
+            raise BadRequestException(detail="Invalid verification code")
     if verify_password(data.new_password, user.hashed_password):
         raise BadRequestException(detail="New password must be different from the current password")
 
     await user_repository.update_password(db, user.id, hash_password(data.new_password))
-    await auth_repository.mark_code_consumed(db, active_code.id)
+    if active_code:
+        await auth_repository.mark_code_consumed(db, active_code.id)

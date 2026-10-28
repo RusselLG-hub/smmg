@@ -22,6 +22,7 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/smmg
+      LOCAL_JMETER_BYPASS: "true"
     command: >-
       sh -c "alembic upgrade head &&
       python -m app.scripts.seed_admin &&

@@ -34,9 +34,9 @@ def send_email(to: str | list[str], subject: str, html: str) -> Any:
     from_email = settings.EMAIL_FROM or "noreply@smmg.site"
     from_name = getattr(settings, "EMAIL_FROM_NAME", "SMMG") or "SMMG"
 
-    if _is_placeholder_api_key(api_key) or not from_email:
+    if settings.is_local_jmeter_bypass or _is_placeholder_api_key(api_key) or not from_email:
         logger.warning(
-            "[DEV EMAIL] Brevo is not configured or using placeholder key. "
+            "[DEV EMAIL] Local JMeter bypass active or Brevo is not configured. "
             "Simulating delivery for recipient(s): %s (subject: '%s').",
             recipients,
             subject,

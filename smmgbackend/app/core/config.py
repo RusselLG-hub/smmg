@@ -57,10 +57,24 @@ class Settings(BaseSettings):
 
     # Environment
     ENVIRONMENT: str = "development"
+    LOCAL_JMETER_BYPASS: bool = True
+    DEV_BYPASS_OTP_CODE: str = "123456"
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:3000"
     API_PUBLIC_URL: str = "http://localhost:8000"
+
+    @property
+    def is_local_jmeter_bypass(self) -> bool:
+        return (
+            self.LOCAL_JMETER_BYPASS
+            and self.ENVIRONMENT.lower() == "development"
+            and not self.AUTH_COOKIE_SECURE
+            and (
+                "localhost" in self.API_PUBLIC_URL.lower()
+                or "127.0.0.1" in self.API_PUBLIC_URL.lower()
+            )
+        )
 
     @property
     def cors_origins(self) -> list[str]:

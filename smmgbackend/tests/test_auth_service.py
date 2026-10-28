@@ -92,6 +92,41 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("already registered", ctx.exception.detail)
 
+    async def test_verify_email_accepts_123456_bypass_on_localhost(self):
+        db = AsyncMock()
+        verify_data = auth_schema.VerifyEmailRequest(
+            email="anyuser@example.com",
+            code="123456",
+        )
+        with (
+            patch.object(auth_service.settings, "LOCAL_JMETER_BYPASS", True),
+            patch.object(auth_service.settings, "ENVIRONMENT", "development"),
+            patch.object(auth_service.settings, "AUTH_COOKIE_SECURE", False),
+            patch.object(auth_service.settings, "API_PUBLIC_URL", "http://localhost:8000"),
+            patch.object(auth_service.user_repository, "get_by_email", AsyncMock(return_value=None)),
+        ):
+            user = await auth_service.verify_email(db, verify_data)
+
+        self.assertEqual(user.email, "anyuser@example.com")
+        self.assertTrue(user.is_email_verified)
+
+    async def test_verify_email_rejects_123456_bypass_on_online_k8s_config(self):
+        from app.core.exceptions import BadRequestException
+
+        db = AsyncMock()
+        verify_data = auth_schema.VerifyEmailRequest(
+            email="anyuser@example.com",
+            code="123456",
+        )
+        with (
+            patch.object(auth_service.settings, "AUTH_COOKIE_SECURE", True),
+            patch.object(auth_service.settings, "API_PUBLIC_URL", "https://api.smmg.site"),
+            patch.object(auth_service.user_repository, "get_by_email", AsyncMock(return_value=None)),
+        ):
+            self.assertFalse(auth_service.settings.is_local_jmeter_bypass)
+            with self.assertRaises(BadRequestException):
+                await auth_service.verify_email(db, verify_data)
+
 
 class PasswordStrengthValidationTests(unittest.TestCase):
     def test_password_strength_rules(self):
