@@ -18,6 +18,7 @@ const form = reactive({
 const localError = ref<string | null>(null)
 const isSubmitting = ref(false)
 const verificationSuccess = computed(() => route.query.verified === 'true')
+const resetSuccess = computed(() => route.query.reset === 'success')
 
 const isUnverifiedEmailError = (detail: string) =>
   detail.toLowerCase().includes('email not verified')
@@ -76,6 +77,15 @@ const handleLogin = async () => {
         <span>Email verified successfully. You can now sign in.</span>
       </div>
 
+      <div
+        v-if="resetSuccess"
+        class="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+        role="status"
+      >
+        <LucideCheckCircle2 class="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+        <span>Your password has been reset successfully. You can now sign in with your new password.</span>
+      </div>
+
       <!-- Error Alert -->
       <div
         v-if="localError"
@@ -103,9 +113,17 @@ const handleLogin = async () => {
         </div>
 
         <div>
-          <label for="password" class="form-label mb-1">
-            Password
-          </label>
+          <div class="flex items-center justify-between mb-1">
+            <label for="password" class="form-label mb-0">
+              Password
+            </label>
+            <NuxtLink
+              to="/forgot-password"
+              class="text-xs font-medium text-primary-600 hover:text-primary-700"
+            >
+              Forgot password?
+            </NuxtLink>
+          </div>
           <input
             id="password"
             v-model="form.password"

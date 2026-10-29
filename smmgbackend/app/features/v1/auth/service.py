@@ -257,3 +257,71 @@ async def confirm_password_change(
     await user_repository.update_password(db, user.id, hash_password(data.new_password))
     if active_code:
         await auth_repository.mark_code_consumed(db, active_code.id)
+
+
+async def forgot_password(
+    db: AsyncSession, data: auth_schema.ForgotPasswordRequest
+) -> None:
+    user = await user_repository.get_by_email(db, data.email)
+    if not user:
+        # Don't reveal account existence
+        return
+
+    code = generate_verification_code()
+    await auth_repository.create_verification_code(
+        db,
+        user_id=user.id,
+        code_hash=hash_password(code),
+        expires_minutes=15,
+        purpose="password_reset",
+    )
+
+    logger.info("Password reset code generated for %s: %s", user.email, code)
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="color: #2563eb; margin-bottom: 16px;">Reset your SMMG password</h2>
+        <p>Hello {user.name},</p>
+        <p>We received a request to reset your password. Use the following 6-digit verification code to complete your password reset:</p>
+        <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 28px; font-weight: bold; text-align: center; padding: 16px; border-radius: 8px; letter-spacing: 4px; margin: 20px 0;">
+            {code}
+        </div>
+        <p style="color: #4b5563; font-size: 14px;">This code will expire in 15 minutes. If you did not request a password reset, you can safely ignore this email.</p>
+    </div>
+    """
+    try:
+        resend_provider.send_email(
+            to=user.email,
+            subject="SMMG — Reset Your Password",
+            html=html_content,
+        )
+    except resend_provider.EmailProviderError as exc:
+        raise ServiceUnavailableException(
+            detail="The reset code could not be emailed. Please try again."
+        ) from exc
+
+
+async def reset_password(
+    db: AsyncSession, data: auth_schema.ResetPasswordRequest
+) -> None:
+    user = await user_repository.get_by_email(db, data.email)
+    if not user:
+        raise BadRequestException(detail="Invalid or expired reset code")
+
+    active_code = await auth_repository.get_latest_active_code(
+        db, user_id=user.id, purpose="password_reset"
+    )
+
+    if not (settings.is_local_jmeter_bypass and data.code == settings.DEV_BYPASS_OTP_CODE):
+        if not active_code:
+            raise BadRequestException(detail="Reset code has expired or is invalid")
+        if not verify_password(data.code, active_code.code_hash):
+            raise BadRequestException(detail="Invalid reset code")
+
+    if verify_password(data.new_password, user.hashed_password):
+        raise BadRequestException(detail="New password must be different from current password")
+
+    await user_repository.update_password(db, user.id, hash_password(data.new_password))
+    if active_code:
+        await auth_repository.mark_code_consumed(db, active_code.id)
+

@@ -30,6 +30,16 @@ export interface PasswordChangeConfirmRequest {
   new_password: string
 }
 
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  email: string
+  code: string
+  new_password: string
+}
+
 export interface AuthResponse {
   user: User
   message: string

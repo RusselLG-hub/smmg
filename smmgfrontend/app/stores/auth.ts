@@ -3,8 +3,10 @@ import { ref, computed } from 'vue'
 import { useAuthService } from '~/services/auth'
 import type { User } from '~~/shared/types/User'
 import type {
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
+  ResetPasswordRequest,
   VerifyEmailRequest,
 } from '~~/shared/types/Auth'
 
@@ -105,6 +107,34 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const forgotPassword = async (data: ForgotPasswordRequest) => {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await authService.forgotPassword(data)
+      return response
+    } catch (err: any) {
+      error.value = err?.data?.detail || err?.message || 'Failed to request password reset'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const resetPassword = async (data: ResetPasswordRequest) => {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await authService.resetPassword(data)
+      return response
+    } catch (err: any) {
+      error.value = err?.data?.detail || err?.message || 'Failed to reset password'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const logout = async () => {
     loading.value = true
     try {
@@ -134,6 +164,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     verifyEmail,
     resendVerification,
+    forgotPassword,
+    resetPassword,
     logout,
   }
 })

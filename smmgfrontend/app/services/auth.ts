@@ -1,10 +1,12 @@
 import type {
   AuthResponse,
+  ForgotPasswordRequest,
   LoginRequest,
   MessageResponse,
   PasswordChangeConfirmRequest,
   ProfileUpdateRequest,
   RegisterRequest,
+  ResetPasswordRequest,
   ResendVerificationRequest,
   VerifyEmailRequest,
 } from '~~/shared/types/Auth'
@@ -61,6 +63,18 @@ export const useAuthService = () => {
 
     confirmPasswordChange: (data: PasswordChangeConfirmRequest) =>
       $api<MessageResponse>('/v1/auth/password-change/confirm', {
+        method: 'POST',
+        body: data,
+      }),
+
+    forgotPassword: (data: ForgotPasswordRequest) =>
+      $api<MessageResponse>('/v1/auth/forgot-password', {
+        method: 'POST',
+        body: data,
+      }),
+
+    resetPassword: (data: ResetPasswordRequest) =>
+      $api<MessageResponse>('/v1/auth/reset-password', {
         method: 'POST',
         body: data,
       }),

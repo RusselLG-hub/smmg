@@ -41,6 +41,51 @@ class AuthServiceTests(unittest.IsolatedAsyncioTestCase):
         db.delete.assert_awaited_once_with(mock_user)
         db.commit.assert_awaited()
 
+    async def test_forgot_password_and_reset_password_success(self):
+        db = AsyncMock()
+        mock_user = SimpleNamespace(
+            id="user-forgot",
+            email="forgot@example.com",
+            name="Forgot User",
+            hashed_password=auth_service.hash_password("OldPassword123!"),
+            is_email_verified=True,
+            is_active=True,
+            role="patient",
+        )
+        active_code = SimpleNamespace(
+            id="code-123",
+            user_id="user-forgot",
+            purpose="password_reset",
+            code_hash=auth_service.hash_password("654321"),
+        )
+
+        with (
+            patch.object(auth_service.user_repository, "get_by_email", AsyncMock(return_value=mock_user)),
+            patch.object(auth_service.auth_repository, "create_verification_code", AsyncMock()) as mock_create_code,
+            patch.object(auth_service.resend_provider, "send_email", unittest.mock.MagicMock()) as mock_send_email,
+        ):
+            await auth_service.forgot_password(db, auth_schema.ForgotPasswordRequest(email="forgot@example.com"))
+            mock_create_code.assert_awaited_once()
+            mock_send_email.assert_called_once()
+
+        with (
+            patch.object(auth_service.user_repository, "get_by_email", AsyncMock(return_value=mock_user)),
+            patch.object(auth_service.auth_repository, "get_latest_active_code", AsyncMock(return_value=active_code)),
+            patch.object(auth_service.user_repository, "update_password", AsyncMock(return_value=mock_user)) as mock_update_pw,
+            patch.object(auth_service.auth_repository, "mark_code_consumed", AsyncMock()) as mock_mark_consumed,
+        ):
+            await auth_service.reset_password(
+                db,
+                auth_schema.ResetPasswordRequest(
+                    email="forgot@example.com",
+                    code="654321",
+                    new_password="NewPassword123!",
+                ),
+            )
+            mock_update_pw.assert_awaited_once()
+            mock_mark_consumed.assert_awaited_once_with(db, "code-123")
+
+
     async def test_register_unverified_existing_user_updates_and_resends_code(self):
         db = AsyncMock()
         existing_user = SimpleNamespace(

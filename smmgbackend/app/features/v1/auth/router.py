@@ -157,3 +157,28 @@ async def confirm_password_change(
 ):
     await auth_service.confirm_password_change(db, current_user, data)
     return auth_schema.MessageResponse(message="Password changed successfully.")
+
+
+@router.post("/forgot-password", response_model=auth_schema.MessageResponse)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    data: auth_schema.ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    await auth_service.forgot_password(db, data)
+    return auth_schema.MessageResponse(
+        message="If an account exists with that email, a password reset code has been sent."
+    )
+
+
+@router.post("/reset-password", response_model=auth_schema.MessageResponse)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    data: auth_schema.ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    await auth_service.reset_password(db, data)
+    return auth_schema.MessageResponse(message="Password has been reset successfully.")
+
