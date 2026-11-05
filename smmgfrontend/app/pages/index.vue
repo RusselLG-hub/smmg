@@ -65,7 +65,7 @@ onMounted(async () => {
 
   <div v-else class="bg-gray-50">
     <section class="hero-photo relative flex min-h-[92svh] items-center overflow-hidden bg-slate-800 pt-20 text-white" aria-labelledby="hero-title">
-      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/65 to-slate-900/5" aria-hidden="true" />
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/75 to-slate-950/40 sm:to-slate-900/25" aria-hidden="true" />
       <div class="relative mx-auto w-full max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
         <div class="max-w-2xl">
           <p class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur-sm">
@@ -205,6 +205,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.hero-photo { background-image: url('/images/healthcare-consultation-hero.jpg'); background-position: 64% center; background-repeat: no-repeat; background-size: cover; }
-@media (max-width: 640px) { .hero-photo { background-position: 58% center; } }
+.hero-photo { background-image: url('/images/smmg-hero-image.jpeg'); background-position: center center; background-repeat: no-repeat; background-size: cover; }
+@media (max-width: 640px) { .hero-photo { background-position: center center; } }
 </style>
