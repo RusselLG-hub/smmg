@@ -57,6 +57,13 @@ const handleRegister = async () => {
     return
   }
 
+  const trimmedName = form.name.trim()
+  const nameParts = trimmedName.split(/\s+/)
+  if (nameParts.length < 2 || nameParts.some((p) => p.length < 2) || !/^[A-Za-zÀ-ÿ\s'.-]+$/.test(trimmedName)) {
+    localError.value = 'Please enter your full name (at least first and last name, letters only).'
+    return
+  }
+
   if (!allRequirementsMet.value) {
     localError.value = 'Password must meet all security requirements.'
     return

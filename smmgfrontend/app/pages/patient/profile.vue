@@ -79,30 +79,62 @@ const handleSave = async () => {
   saving.value = true
   successMsg.value = null
   errorMsg.value = null
-  const normalizedPhone = form.phone ? normalizePhilippineMobile(form.phone) : null
-  if (form.phone && !normalizedPhone) {
-    errorMsg.value = 'Enter a valid Philippine mobile number, such as 0917 123 4567.'
+
+  const trimmedName = form.name.trim()
+  const nameParts = trimmedName.split(/\s+/)
+  if (!trimmedName || nameParts.length < 2 || nameParts.some((p) => p.length < 2) || !/^[A-Za-zÀ-ÿ\s'.-]+$/.test(trimmedName)) {
+    errorMsg.value = 'Please enter your full name (first and last name, letters only).'
     saving.value = false
     return
   }
+
+  if (form.date_of_birth) {
+    const dob = new Date(form.date_of_birth)
+    const now = new Date()
+    const birthYear = dob.getFullYear()
+    if (isNaN(dob.getTime()) || birthYear < 1900 || dob > now) {
+      errorMsg.value = 'Please enter a valid date of birth (between 1900 and today).'
+      saving.value = false
+      return
+    }
+  }
+
+  const normalizedPhone = form.phone ? normalizePhilippineMobile(form.phone) : null
+  if (form.phone && !normalizedPhone) {
+    errorMsg.value = 'Enter a valid Philippine mobile number, such as 0917 123 4567 or +639171234567.'
+    saving.value = false
+    return
+  }
+
+  const trimmedAddress = form.address ? form.address.trim() : null
+  if (trimmedAddress && (trimmedAddress.length < 5 || !/[A-Za-z]/.test(trimmedAddress))) {
+    errorMsg.value = 'Please enter a complete address with street/city details (at least 5 characters).'
+    saving.value = false
+    return
+  }
+
   try {
     const updated = await patientService.updateMyProfile({
-      name: form.name,
+      name: trimmedName,
       date_of_birth: form.date_of_birth || null,
       gender: form.gender || null,
       phone: normalizedPhone,
-      address: form.address || null,
+      address: trimmedAddress,
       profile_image_url: form.profile_image_url || null,
     })
     profile.value = updated
     profileImageUrl.value = updated.profile_image_url || null
     if (authStore.user) {
-      authStore.user.name = form.name
+      authStore.user.name = trimmedName
       authStore.user.profile_image_url = updated.profile_image_url || null
     }
     successMsg.value = 'Profile updated successfully'
   } catch (err: any) {
-    errorMsg.value = err?.data?.detail || 'Failed to update profile'
+    if (Array.isArray(err?.data?.detail)) {
+      errorMsg.value = err.data.detail.map((d: any) => d.msg.replace(/^Value error,\s*/i, '')).join(', ')
+    } else {
+      errorMsg.value = err?.data?.detail || 'Failed to update profile'
+    }
   } finally {
     saving.value = false
   }

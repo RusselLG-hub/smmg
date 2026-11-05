@@ -215,6 +215,15 @@ class PasswordStrengthValidationTests(unittest.TestCase):
         )
         self.assertEqual(req.password, "StrongPassword123!")
 
+    def test_register_schema_rejects_single_word_name(self):
+        # BUG-001: System must reject single-word name like 'meow'
+        with self.assertRaises(Exception):
+            auth_schema.RegisterRequest(
+                name="meow",
+                email="test@example.com",
+                password="StrongPassword123!",
+            )
+
 
 class BrevoProviderTests(unittest.TestCase):
     def test_placeholder_key_detection(self):

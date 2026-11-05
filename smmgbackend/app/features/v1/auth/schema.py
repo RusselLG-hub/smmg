@@ -22,6 +22,15 @@ class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     password: str = Field(..., min_length=8, max_length=128)
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        trimmed = v.strip()
+        parts = trimmed.split()
+        if len(parts) < 2 or any(len(p) < 2 for p in parts) or not re.match(r"^[A-Za-zÀ-ÿ\s'.-]+$", trimmed):
+            raise ValueError("Full name must include at least first and last name (letters only).")
+        return trimmed
+
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:

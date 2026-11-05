@@ -216,5 +216,47 @@ class AppointmentApiTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status_code, 401)
 
 
+    async def test_appointment_create_rejects_non_descriptive_reason(self):
+        # BUG-003: "0..." or strings without meaningful descriptive words must fail schema validation
+        response = await self.client.post(
+            "/v1/appointments",
+            json={
+                "doctor_profile_id": "doctor-1",
+                "date": "2099-01-01",
+                "time": "09:00",
+                "reason": "0...",
+            },
+        )
+        self.assertEqual(response.status_code, 422)
+
+    def test_patient_profile_update_schema_validations(self):
+        from app.features.v1.patients.schema import PatientProfileUpdate
+
+        # BUG-001: Invalid birthdate 01/01/0001
+        with self.assertRaises(Exception):
+            PatientProfileUpdate(date_of_birth="0001-01-01")
+
+        # BUG-001: Invalid address "00"
+        with self.assertRaises(Exception):
+            PatientProfileUpdate(address="00")
+
+        # BUG-002: Invalid phone "."
+        with self.assertRaises(Exception):
+            PatientProfileUpdate(phone=".")
+
+        # BUG-002: Invalid address "."
+        with self.assertRaises(Exception):
+            PatientProfileUpdate(address=".")
+
+        # Valid profile update passes
+        valid = PatientProfileUpdate(
+            name="Juan Dela Cruz",
+            date_of_birth="1995-10-24",
+            phone="09123456789",
+            address="123 Health Ave, Sorsogon City",
+        )
+        self.assertEqual(valid.phone, "+639123456789")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -409,24 +409,52 @@ const handleStep1Continue = async () => {
   Object.keys(patientErrors).forEach(key => delete patientErrors[key])
   let isValid = true
 
-  if (!patientForm.name.trim()) {
+  // Reset previous errors
+  Object.keys(patientErrors).forEach((key) => delete patientErrors[key])
+
+  const trimmedName = patientForm.name.trim()
+  const nameParts = trimmedName.split(/\s+/)
+  if (!trimmedName) {
     patientErrors.name = 'Full name is required'
     isValid = false
+  } else if (nameParts.length < 2 || nameParts.some((p) => p.length < 2) || !/^[A-Za-zÀ-ÿ\s'.-]+$/.test(trimmedName)) {
+    patientErrors.name = 'Please enter your full name (first and last name, letters only).'
+    isValid = false
   }
+
+  const normalizedPhone = normalizePhilippineMobile(patientForm.phone)
   if (!patientForm.phone.trim()) {
     patientErrors.phone = 'Phone number is required'
     isValid = false
+  } else if (!normalizedPhone) {
+    patientErrors.phone = 'Please enter a valid Philippine mobile number (e.g., 09123456789 or +639123456789).'
+    isValid = false
   }
+
   if (!patientForm.date_of_birth) {
     patientErrors.date_of_birth = 'Date of birth is required'
     isValid = false
+  } else {
+    const dob = new Date(patientForm.date_of_birth)
+    const now = new Date()
+    const birthYear = dob.getFullYear()
+    if (isNaN(dob.getTime()) || birthYear < 1900 || dob > now) {
+      patientErrors.date_of_birth = 'Please enter a valid date of birth (between 1900 and today).'
+      isValid = false
+    }
   }
+
   if (!patientForm.gender) {
     patientErrors.gender = 'Gender is required'
     isValid = false
   }
-  if (!patientForm.address.trim()) {
+
+  const trimmedAddress = patientForm.address.trim()
+  if (!trimmedAddress) {
     patientErrors.address = 'Address is required'
+    isValid = false
+  } else if (trimmedAddress.length < 5 || !/[A-Za-z]/.test(trimmedAddress)) {
+    patientErrors.address = 'Please enter a complete address with street/city details (at least 5 characters).'
     isValid = false
   }
 
@@ -435,17 +463,23 @@ const handleStep1Continue = async () => {
   try {
     isUpdatingProfile.value = true
     await patientService.updateMyProfile({
-      name: patientForm.name.trim(),
-      phone: normalizePhilippineMobile(patientForm.phone) || patientForm.phone.trim(),
+      name: trimmedName,
+      phone: normalizedPhone,
       date_of_birth: patientForm.date_of_birth,
       gender: patientForm.gender,
-      address: patientForm.address.trim(),
+      address: trimmedAddress,
     })
     if (authStore.user) {
-      authStore.user.name = patientForm.name.trim()
+      authStore.user.name = trimmedName
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn('Profile sync:', err)
+    if (err?.data?.detail) {
+      error.value = Array.isArray(err.data.detail)
+        ? err.data.detail.map((d: any) => d.msg.replace(/^Value error,\s*/i, '')).join(', ')
+        : err.data.detail
+      return
+    }
   } finally {
     isUpdatingProfile.value = false
   }
@@ -468,8 +502,14 @@ const handleStep2Continue = () => {
 // STEP 3 VALIDATE & CONTINUE
 const handleStep3Continue = () => {
   symptomError.value = null
-  if (!symptoms.value.trim() || symptoms.value.trim().length < 5) {
+  const trimmed = symptoms.value.trim()
+  if (!trimmed || trimmed.length < 5) {
     symptomError.value = 'Please describe your symptoms or reason for visit (minimum 5 characters).'
+    return
+  }
+  const lettersOnly = trimmed.replace(/[^A-Za-z]/g, '')
+  if (lettersOnly.length < 3) {
+    symptomError.value = 'Please describe your symptoms using words (e.g., headache, fever, cough).'
     return
   }
   step.value = 4
